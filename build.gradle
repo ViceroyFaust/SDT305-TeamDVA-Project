@@ -23,6 +23,10 @@ test {
     useJUnitPlatform()
 }
 
+run {
+    standardInput = System.in
+}
+
 task fatJar(type: Jar) {
     manifest {
         attributes 'Main-Class': application.mainClass
