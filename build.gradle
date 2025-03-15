@@ -12,7 +12,13 @@ repositories {
 application {
     mainClass = 'ua.edu.auk.dva.Main'
 }
-
+sourceSets {
+    main {
+        resources {
+            srcDirs = ["src/main/resources"]
+        }
+    }
+}
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
