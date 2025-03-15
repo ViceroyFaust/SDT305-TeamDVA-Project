@@ -37,6 +37,46 @@ public class HandleDQL implements  RequestHandler{
             return table;
         }
     }
+    /**
+     * Fetch details of specific employees.
+     * @param database Database connection
+     * @param employeeIds List of Employee IDs
+     * @return Table containing employee details
+     */
+    public static Table getEmployees(Database database, String[] employeeIds) throws SQLException {
+        if (employeeIds == null || employeeIds.length == 0) {
+            throw new IllegalArgumentException("Employee IDs array cannot be empty.");
+        }
+        Connection conn = database.getDatabase();
+        String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
+
+        String sql = """
+            SELECT EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId
+            FROM Employee
+            WHERE EmployeeId IN (%s)
+        """.formatted(placeholders);
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            // Set values for the placeholders
+            for (int i = 0; i < employeeIds.length; i++) {
+                stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            Table table = new Table(7, "Employees");
+
+            while (rs.next()) {
+                table.add(String.valueOf(rs.getInt("EmployeeId")));
+                table.add(rs.getString("FirstName"));
+                table.add(rs.getString("LastName"));
+                table.add(String.valueOf(rs.getInt("Salary")));
+                table.add(String.valueOf(rs.getDate("DateJoined")));
+                table.add(rs.getString("Position"));
+                table.add(String.valueOf(rs.getInt("RestaurantId")));
+            }
+            return table;
+        }
+    }
 
     /**
      * Fetch stations where employees are trained or manage.
