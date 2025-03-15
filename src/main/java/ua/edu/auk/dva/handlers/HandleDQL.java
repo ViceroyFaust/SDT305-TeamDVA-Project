@@ -2,23 +2,48 @@ package ua.edu.auk.dva.handlers;
 
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.Table;
-
+import ua.edu.auk.dva.View;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-public class HandleDQL implements  RequestHandler{
+public class HandleDQL implements RequestHandler{
+    private final Database database;
+    private final View view;
+    @FunctionalInterface
+    interface SqlExceptionThrowingFunction<R> {
+        R get() throws SQLException;
+    }
+    private final Map<String, SqlExceptionThrowingFunction<Table>> functionMap = new HashMap<>();
+    private void fillMap(){
+        functionMap.put("1", this::getEmployees);
+        //View Employees by Position is missing
+        functionMap.put("3", this::getEmployeeStations);
+        functionMap.put("4", this::getInstructorStudents);
+        functionMap.put("5", this::getManagersStations);
+        functionMap.put("6", this::getEmployeeSchedule);
+        functionMap.put("7", this::getProductionStations);
+        functionMap.put("8", this::getRestaurants);
+    }
+    public HandleDQL(Database database, View view){
+        this.database = database;
+        this.view = view;
+        fillMap();
+    }
     @Override
-    public void handleRequest(String request, String[] args) {
+    public Table handleRequest(String request, String[] args) throws SQLException{
         System.out.println("Handling DQL request: " + request);
+        return functionMap.get(request).get();
     }
     /**
      * Fetch all employees from the database and return as a Table object.
      */
-    public static Table getEmployees(Database database) throws SQLException {
-        Connection conn = database.getDatabase();
+    public Table getEmployeesNoArgs() throws SQLException {
+        Connection conn = this.database.getDatabase();
         String sql = "SELECT EmployeeId, FirstName, LastName, Position, Salary, DateJoined, RestaurantId FROM Employee";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
@@ -39,14 +64,17 @@ public class HandleDQL implements  RequestHandler{
     }
     /**
      * Fetch details of specific employees.
-     * @param database Database connection
-     * @param employeeIds List of Employee IDs
      * @return Table containing employee details
      */
-    public static Table getEmployees(Database database, String[] employeeIds) throws SQLException {
-        if (employeeIds == null || employeeIds.length == 0) {
-            throw new IllegalArgumentException("Employee IDs array cannot be empty.");
-        }
+    public Table getEmployees() throws SQLException {
+        String request = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,) " +
+                "or nothing to output all employees: ");
+
+        if(request.isEmpty())
+            return getEmployeesNoArgs();
+
+        String[] employeeIds = request.split(",");
+
         Connection conn = database.getDatabase();
         String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
 
@@ -80,16 +108,15 @@ public class HandleDQL implements  RequestHandler{
 
     /**
      * Fetch stations where employees are trained or manage.
-     * @param database Database connection
-     * @param employeeIds List of Employee IDs
      * @return Table containing employee-station mapping
      */
-    public static Table getEmployeeStations(Database database, String[] employeeIds) throws SQLException {
-        if (employeeIds == null || employeeIds.length == 0) {
+    public Table getEmployeeStations() throws SQLException {
+        String[] employeeIds = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
+        if (employeeIds.length == 0) {
             throw new IllegalArgumentException("Employee IDs array cannot be empty.");
         }
 
-        Connection conn = database.getDatabase();
+        Connection conn = this.database.getDatabase();
 
         String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
 
@@ -127,16 +154,15 @@ public class HandleDQL implements  RequestHandler{
 
     /**
      * Fetch students (employees) trained by specific instructors (trainers).
-     * @param database Database connection
-     * @param instructorIds List of Instructor (Trainer) IDs
      * @return Table containing instructor-student relationships
      */
-    public static Table getInstructorStudents(Database database, String[] instructorIds) throws SQLException {
-        if (instructorIds == null || instructorIds.length == 0) {
+    public Table getInstructorStudents() throws SQLException {
+        String[] instructorIds = view.prompt("Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ").split(",");
+        if (instructorIds.length == 0) {
             throw new IllegalArgumentException("Instructor IDs array cannot be empty.");
         }
 
-        Connection conn = database.getDatabase();
+        Connection conn = this.database.getDatabase();
 
         String placeholders = String.join(",", Arrays.stream(instructorIds).map(id -> "?").toArray(String[]::new));
 
@@ -170,12 +196,11 @@ public class HandleDQL implements  RequestHandler{
     }
     /**
      * Fetch stations managed by specific managers.
-     * @param database Database connection
-     * @param managerIds List of Manager IDs
      * @return Table containing manager-station relationships
      */
-    public static Table getManagersStations(Database database, String[] managerIds) throws SQLException {
-        if (managerIds == null || managerIds.length == 0) {
+    public Table getManagersStations() throws SQLException {
+        String[] managerIds = view.prompt("Please enter the Manager IDs separated by commas (ex. 1,2,3,): ").split(",");
+        if (managerIds.length == 0) {
             throw new IllegalArgumentException("Manager IDs array cannot be empty.");
         }
 
@@ -212,16 +237,15 @@ public class HandleDQL implements  RequestHandler{
     }
     /**
      * Fetch schedule for specific employees.
-     * @param database Database connection
-     * @param employeeIds List of Employee IDs
      * @return Table containing employee schedule
      */
-    public static Table getEmployeeSchedule(Database database, String[] employeeIds) throws SQLException {
-        if (employeeIds == null || employeeIds.length == 0) {
+    public Table getEmployeeSchedule() throws SQLException {
+        String[] employeeIds = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
+        if (employeeIds.length == 0) {
             throw new IllegalArgumentException("Employee IDs array cannot be empty.");
         }
 
-        Connection conn = database.getDatabase();
+        Connection conn = this.database.getDatabase();
 
         String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
 
@@ -253,11 +277,10 @@ public class HandleDQL implements  RequestHandler{
     }
     /**
      * Fetch all production stations from the database.
-     * @param database Database connection
      * @return Table containing all production stations
      */
-    public static Table getProductionStations(Database database) throws SQLException {
-        Connection conn = database.getDatabase();
+    public Table getProductionStations() throws SQLException {
+        Connection conn = this.database.getDatabase();
         String sql = "SELECT Name, Category FROM ProductionStation";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
@@ -274,11 +297,10 @@ public class HandleDQL implements  RequestHandler{
     }
     /**
      * Fetch all restaurants from the database.
-     * @param database Database connection
      * @return Table containing all restaurants
      */
-    public static Table getRestaurants(Database database) throws SQLException {
-        Connection conn = database.getDatabase();
+    public Table getRestaurants() throws SQLException {
+        Connection conn = this.database.getDatabase();
         String sql = "SELECT RestaurantId, OpeningTime, ClosingTime, DateOpened FROM Restaurant";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
