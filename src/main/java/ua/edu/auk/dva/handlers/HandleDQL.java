@@ -80,7 +80,7 @@ public class HandleDQL implements RequestHandler {
 
   private void fillMap() {
     functionMap.put("1", this::getEmployees);
-    //View Employees by Position is missing
+    functionMap.put("2", this::getEmployeeByPosition);
     functionMap.put("3", this::getEmployeeStations);
     functionMap.put("4", this::getInstructorStudents);
     functionMap.put("5", this::getManagersStations);
@@ -148,6 +148,24 @@ public class HandleDQL implements RequestHandler {
       ResultSet rs = stmt.executeQuery();
       return resultsToTable(rs, "Employee(s)");
     }
+  }
+
+    /**
+     * Fetches the details of employees with a given position
+     *
+     * @return A table representing said employees
+     * @throws SQLException if an error occurs with the database
+     */
+  public Table getEmployeeByPosition() throws SQLException {
+      String request = view.prompt("Please enter position: ");
+
+      String sql = "SELECT * FROM Employee WHERE Position = ? ;";
+
+      try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
+          statement.setString(1, request);
+          ResultSet results = statement.executeQuery();
+          return resultsToTable(results, "Employee by Position");
+      }
   }
 
   /**
