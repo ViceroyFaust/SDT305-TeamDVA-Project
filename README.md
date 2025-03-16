@@ -9,17 +9,20 @@ This is the repository of Team DVA's final project for AUK's SDT 305 Principles 
   - Documentation
   - Coded View, Table, and ResultsToTable
   - Code reviews and bugfixes
+  - Worked on Video Presentation
 - Vladyslav Shvets
   - Handler pattern design in project
   - Hosted an online database for testing
   - Created dummy database inserts
   - Worked on creating the controller communication with handlers
   - Implemented the main loop
+  - Worked on Video Presentation
 - Andrii Tivonenko
   - Wrote SQL statements
   - Implemented Handler logic
   - Created custom, dynamic prepared statements
   - Manual testing
+  - Worked on Video Presentation
 
 ## Steps for Creating a Database
 1. Set up a MySQL database
