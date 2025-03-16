@@ -7,13 +7,14 @@ import java.sql.SQLException;
 /**
  * An abstraction of the database connection
  */
-public class Database implements  AutoCloseable {
+public class Database implements AutoCloseable {
+
   private final Connection database;
 
   /**
    * A simple abstraction of a database connection
    *
-   * @param URI the URI/URL of the database
+   * @param URI  the URI/URL of the database
    * @param user the username of the database
    * @param pass the password of the user
    * @throws SQLException if an SQL error occurs

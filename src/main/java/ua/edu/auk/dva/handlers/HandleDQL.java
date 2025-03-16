@@ -1,158 +1,173 @@
 package ua.edu.auk.dva.handlers;
 
-import java.sql.ResultSetMetaData;
-import ua.edu.auk.dva.Database;
-import ua.edu.auk.dva.Table;
-import ua.edu.auk.dva.View;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import ua.edu.auk.dva.Database;
+import ua.edu.auk.dva.Table;
+import ua.edu.auk.dva.View;
 
-public class HandleDQL implements RequestHandler{
-    private final Database database;
-    private final View view;
-    @FunctionalInterface
-    interface SqlExceptionThrowingFunction<R> {
-        R get() throws SQLException;
-    }
+public class HandleDQL implements RequestHandler {
 
-    /**
- * Converts a ResultSet to a table of strings.
- *
- * @param results the results of a query
- * @param name the name of the table
- * @return a table of strings
- * @throws SQLException if any exception occurs during this process
- */
-private Table resultsToTable(ResultSet results, String name) throws SQLException {
-  ResultSetMetaData metaData = results.getMetaData();
-  int columns = metaData.getColumnCount();
-  Table table = new Table(columns, name);
+  private final Database database;
+  private final View view;
 
-  // Add the column headers to the table
-  for (int i = 1; i <= columns; i++) {
-    table.add(metaData.getColumnLabel(i));
+  @FunctionalInterface
+  interface SqlExceptionThrowingFunction<R> {
+
+    R get() throws SQLException;
   }
-  // Add the column values to the table
-  while (results.next()) {
+
+  /**
+   * Converts a ResultSet to a table of strings.
+   *
+   * @param results the results of a query
+   * @param name    the name of the table
+   * @return a table of strings
+   * @throws SQLException if any exception occurs during this process
+   */
+  private Table resultsToTable(ResultSet results, String name) throws SQLException {
+    ResultSetMetaData metaData = results.getMetaData();
+    int columns = metaData.getColumnCount();
+    Table table = new Table(columns, name);
+
+    // Add the column headers to the table
     for (int i = 1; i <= columns; i++) {
-      table.add(results.getString(i));
+      table.add(metaData.getColumnLabel(i));
     }
+    // Add the column values to the table
+    while (results.next()) {
+      for (int i = 1; i <= columns; i++) {
+        table.add(results.getString(i));
+      }
+    }
+
+    return table;
   }
 
-  return table;
-}
+  /**
+   * Converts a ResultSet to a table of strings.
+   *
+   * @param results the results of a query
+   * @return a table of strings
+   * @throws SQLException if any exception occurs during this process
+   */
+  private Table resultsToTable(ResultSet results) throws SQLException {
+    ResultSetMetaData metaData = results.getMetaData();
+    int columns = metaData.getColumnCount();
+    Table table = new Table(columns);
 
-/**
- * Converts a ResultSet to a table of strings.
- *
- * @param results the results of a query
- * @return a table of strings
- * @throws SQLException if any exception occurs during this process
- */
-private Table resultsToTable(ResultSet results) throws SQLException {
-  ResultSetMetaData metaData = results.getMetaData();
-  int columns = metaData.getColumnCount();
-  Table table = new Table(columns);
-
-  // Add the column headers to the table
-  for (int i = 1; i <= columns; i++) {
-    table.add(metaData.getColumnLabel(i));
-  }
-  // Add the column values to the table
-  while (results.next()) {
+    // Add the column headers to the table
     for (int i = 1; i <= columns; i++) {
-      table.add(results.getString(i));
+      table.add(metaData.getColumnLabel(i));
+    }
+    // Add the column values to the table
+    while (results.next()) {
+      for (int i = 1; i <= columns; i++) {
+        table.add(results.getString(i));
+      }
+    }
+
+    return table;
+  }
+
+  private final Map<String, SqlExceptionThrowingFunction<Table>> functionMap = new HashMap<>();
+
+  private void fillMap() {
+    functionMap.put("1", this::getEmployees);
+    //View Employees by Position is missing
+    functionMap.put("3", this::getEmployeeStations);
+    functionMap.put("4", this::getInstructorStudents);
+    functionMap.put("5", this::getManagersStations);
+    functionMap.put("6", this::getEmployeeSchedule);
+    functionMap.put("7", this::getProductionStations);
+    functionMap.put("8", this::getRestaurants);
+  }
+
+  public HandleDQL(Database database, View view) {
+    this.database = database;
+    this.view = view;
+    fillMap();
+  }
+
+  @Override
+  public Table handleRequest(String request, String[] args) throws SQLException {
+    System.out.println("Handling DQL request: " + request);
+    return functionMap.get(request).get();
+  }
+
+  /**
+   * Fetch all employees from the database and return as a Table object.
+   */
+  public Table getEmployeesNoArgs() throws SQLException {
+    Connection conn = this.database.getDatabase();
+    String sql = "SELECT * FROM Employee";
+
+    try (PreparedStatement stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery()) {
+      return resultsToTable(rs, "Employees");
     }
   }
 
-  return table;
-}
-    private final Map<String, SqlExceptionThrowingFunction<Table>> functionMap = new HashMap<>();
-    private void fillMap(){
-        functionMap.put("1", this::getEmployees);
-        //View Employees by Position is missing
-        functionMap.put("3", this::getEmployeeStations);
-        functionMap.put("4", this::getInstructorStudents);
-        functionMap.put("5", this::getManagersStations);
-        functionMap.put("6", this::getEmployeeSchedule);
-        functionMap.put("7", this::getProductionStations);
-        functionMap.put("8", this::getRestaurants);
-    }
-    public HandleDQL(Database database, View view){
-        this.database = database;
-        this.view = view;
-        fillMap();
-    }
-    @Override
-    public Table handleRequest(String request, String[] args) throws SQLException{
-        System.out.println("Handling DQL request: " + request);
-        return functionMap.get(request).get();
-    }
-    /**
-     * Fetch all employees from the database and return as a Table object.
-     */
-    public Table getEmployeesNoArgs() throws SQLException {
-        Connection conn = this.database.getDatabase();
-        String sql = "SELECT * FROM Employee";
+  /**
+   * Fetch details of specific employees.
+   *
+   * @return Table containing employee details
+   */
+  public Table getEmployees() throws SQLException {
+    String request = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,) " +
+        "or nothing to output all employees: ");
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            return resultsToTable(rs, "Employees");
-        }
-    }
-    /**
-     * Fetch details of specific employees.
-     * @return Table containing employee details
-     */
-    public Table getEmployees() throws SQLException {
-        String request = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,) " +
-                "or nothing to output all employees: ");
+      if (request.isEmpty()) {
+          return getEmployeesNoArgs();
+      }
 
-        if(request.isEmpty())
-            return getEmployeesNoArgs();
+    String[] employeeIds = request.split(",");
 
-        String[] employeeIds = request.split(",");
+    Connection conn = database.getDatabase();
+    String placeholders = String.join(",",
+        Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
 
-        Connection conn = database.getDatabase();
-        String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
-
-        String sql = """
+    String sql = """
             SELECT EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId
             FROM Employee
             WHERE EmployeeId IN (%s)
         """.formatted(placeholders);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            // Set values for the placeholders
-            for (int i = 0; i < employeeIds.length; i++) {
-                stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
-            }
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      // Set values for the placeholders
+      for (int i = 0; i < employeeIds.length; i++) {
+        stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
+      }
 
-            ResultSet rs = stmt.executeQuery();
-            return resultsToTable(rs, "Employee(s)");
-        }
+      ResultSet rs = stmt.executeQuery();
+      return resultsToTable(rs, "Employee(s)");
+    }
+  }
+
+  /**
+   * Fetch stations where employees are trained or manage.
+   *
+   * @return Table containing employee-station mapping
+   */
+  public Table getEmployeeStations() throws SQLException {
+    String[] employeeIds = view.prompt(
+        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
+    if (employeeIds.length == 0) {
+      throw new IllegalArgumentException("Employee IDs array cannot be empty.");
     }
 
-    /**
-     * Fetch stations where employees are trained or manage.
-     * @return Table containing employee-station mapping
-     */
-    public Table getEmployeeStations() throws SQLException {
-        String[] employeeIds = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
-        if (employeeIds.length == 0) {
-            throw new IllegalArgumentException("Employee IDs array cannot be empty.");
-        }
+    Connection conn = this.database.getDatabase();
 
-        Connection conn = this.database.getDatabase();
+    String placeholders = String.join(",",
+        Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
 
-        String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
-
-        String sql = """
+    String sql = """
             SELECT E.EmployeeId, E.FirstName, E.LastName, T.StationName, 'Trained In' AS RelationType
             FROM Employee E
             JOIN TrainedIn T ON E.EmployeeId = T.EmployeeId
@@ -164,32 +179,35 @@ private Table resultsToTable(ResultSet results) throws SQLException {
             WHERE E.EmployeeId IN (%s)
         """.formatted(placeholders, placeholders);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < employeeIds.length; i++) {
-                stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
-                stmt.setInt(i + 1 + employeeIds.length, Integer.parseInt(employeeIds[i]));
-            }
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      for (int i = 0; i < employeeIds.length; i++) {
+        stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
+        stmt.setInt(i + 1 + employeeIds.length, Integer.parseInt(employeeIds[i]));
+      }
 
-            ResultSet rs = stmt.executeQuery();
-            return resultsToTable(rs, "Employee Stations");
-        }
+      ResultSet rs = stmt.executeQuery();
+      return resultsToTable(rs, "Employee Stations");
+    }
+  }
+
+  /**
+   * Fetch students (employees) trained by specific instructors (trainers).
+   *
+   * @return Table containing instructor-student relationships
+   */
+  public Table getInstructorStudents() throws SQLException {
+    String[] instructorIds = view.prompt(
+        "Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ").split(",");
+    if (instructorIds.length == 0) {
+      throw new IllegalArgumentException("Instructor IDs array cannot be empty.");
     }
 
-    /**
-     * Fetch students (employees) trained by specific instructors (trainers).
-     * @return Table containing instructor-student relationships
-     */
-    public Table getInstructorStudents() throws SQLException {
-        String[] instructorIds = view.prompt("Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ").split(",");
-        if (instructorIds.length == 0) {
-            throw new IllegalArgumentException("Instructor IDs array cannot be empty.");
-        }
+    Connection conn = this.database.getDatabase();
 
-        Connection conn = this.database.getDatabase();
+    String placeholders = String.join(",",
+        Arrays.stream(instructorIds).map(id -> "?").toArray(String[]::new));
 
-        String placeholders = String.join(",", Arrays.stream(instructorIds).map(id -> "?").toArray(String[]::new));
-
-        String sql = """
+    String sql = """
             SELECT T.TrainerId, I.FirstName AS InstructorFirstName, I.LastName AS InstructorLastName,
                    T.EmployeeId, E.FirstName AS StudentFirstName, E.LastName AS StudentLastName
             FROM Train T
@@ -198,30 +216,34 @@ private Table resultsToTable(ResultSet results) throws SQLException {
             WHERE T.TrainerId IN (%s)
         """.formatted(placeholders);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < instructorIds.length; i++) {
-                stmt.setInt(i + 1, Integer.parseInt(instructorIds[i]));
-            }
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      for (int i = 0; i < instructorIds.length; i++) {
+        stmt.setInt(i + 1, Integer.parseInt(instructorIds[i]));
+      }
 
-            ResultSet rs = stmt.executeQuery();
-            return resultsToTable(rs, "Instructor Students");
-        }
+      ResultSet rs = stmt.executeQuery();
+      return resultsToTable(rs, "Instructor Students");
     }
-    /**
-     * Fetch stations managed by specific managers.
-     * @return Table containing manager-station relationships
-     */
-    public Table getManagersStations() throws SQLException {
-        String[] managerIds = view.prompt("Please enter the Manager IDs separated by commas (ex. 1,2,3,): ").split(",");
-        if (managerIds.length == 0) {
-            throw new IllegalArgumentException("Manager IDs array cannot be empty.");
-        }
+  }
 
-        Connection conn = database.getDatabase();
+  /**
+   * Fetch stations managed by specific managers.
+   *
+   * @return Table containing manager-station relationships
+   */
+  public Table getManagersStations() throws SQLException {
+    String[] managerIds = view.prompt(
+        "Please enter the Manager IDs separated by commas (ex. 1,2,3,): ").split(",");
+    if (managerIds.length == 0) {
+      throw new IllegalArgumentException("Manager IDs array cannot be empty.");
+    }
 
-        String placeholders = String.join(",", Arrays.stream(managerIds).map(id -> "?").toArray(String[]::new));
+    Connection conn = database.getDatabase();
 
-        String sql = """
+    String placeholders = String.join(",",
+        Arrays.stream(managerIds).map(id -> "?").toArray(String[]::new));
+
+    String sql = """
             SELECT M.ManagerId, E.FirstName AS ManagerFirstName, E.LastName AS ManagerLastName,
                    M.StationName, P.Category
             FROM Manages M
@@ -230,69 +252,77 @@ private Table resultsToTable(ResultSet results) throws SQLException {
             WHERE M.ManagerId IN (%s)
         """.formatted(placeholders);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < managerIds.length; i++) {
-                stmt.setInt(i + 1, Integer.parseInt(managerIds[i]));
-            }
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      for (int i = 0; i < managerIds.length; i++) {
+        stmt.setInt(i + 1, Integer.parseInt(managerIds[i]));
+      }
 
-            ResultSet rs = stmt.executeQuery();
-            return resultsToTable(rs, "Manager Stations");
-        }
+      ResultSet rs = stmt.executeQuery();
+      return resultsToTable(rs, "Manager Stations");
     }
-    /**
-     * Fetch schedule for specific employees.
-     * @return Table containing employee schedule
-     */
-    public Table getEmployeeSchedule() throws SQLException {
-        String[] employeeIds = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
-        if (employeeIds.length == 0) {
-            throw new IllegalArgumentException("Employee IDs array cannot be empty.");
-        }
+  }
 
-        Connection conn = this.database.getDatabase();
+  /**
+   * Fetch schedule for specific employees.
+   *
+   * @return Table containing employee schedule
+   */
+  public Table getEmployeeSchedule() throws SQLException {
+    String[] employeeIds = view.prompt(
+        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
+    if (employeeIds.length == 0) {
+      throw new IllegalArgumentException("Employee IDs array cannot be empty.");
+    }
 
-        String placeholders = String.join(",", Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
+    Connection conn = this.database.getDatabase();
 
-        String sql = """
+    String placeholders = String.join(",",
+        Arrays.stream(employeeIds).map(id -> "?").toArray(String[]::new));
+
+    String sql = """
             SELECT S.EmployeeId, E.FirstName, E.LastName, S.Date, S.StartTime, S.EndTime
             FROM Schedule S
             JOIN Employee E ON S.EmployeeId = E.EmployeeId
             WHERE S.EmployeeId IN (%s)
         """.formatted(placeholders);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < employeeIds.length; i++) {
-                stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
-            }
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      for (int i = 0; i < employeeIds.length; i++) {
+        stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
+      }
 
-            ResultSet rs = stmt.executeQuery();
-            return resultsToTable(rs, "Employee Schedule");
-        }
+      ResultSet rs = stmt.executeQuery();
+      return resultsToTable(rs, "Employee Schedule");
     }
-    /**
-     * Fetch all production stations from the database.
-     * @return Table containing all production stations
-     */
-    public Table getProductionStations() throws SQLException {
-        Connection conn = this.database.getDatabase();
-        String sql = "SELECT Name, Category FROM ProductionStation";
+  }
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            return resultsToTable(rs, "Production Stations");
-        }
-    }
-    /**
-     * Fetch all restaurants from the database.
-     * @return Table containing all restaurants
-     */
-    public Table getRestaurants() throws SQLException {
-        Connection conn = this.database.getDatabase();
-        String sql = "SELECT RestaurantId, OpeningTime, ClosingTime, DateOpened FROM Restaurant";
+  /**
+   * Fetch all production stations from the database.
+   *
+   * @return Table containing all production stations
+   */
+  public Table getProductionStations() throws SQLException {
+    Connection conn = this.database.getDatabase();
+    String sql = "SELECT Name, Category FROM ProductionStation";
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            return resultsToTable(rs, "Restaurants");
-        }
+    try (PreparedStatement stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery()) {
+      return resultsToTable(rs, "Production Stations");
     }
+  }
+
+  /**
+   * Fetch all restaurants from the database.
+   *
+   * @return Table containing all restaurants
+   */
+  public Table getRestaurants() throws SQLException {
+    Connection conn = this.database.getDatabase();
+    String sql = "SELECT RestaurantId, OpeningTime, ClosingTime, DateOpened FROM Restaurant";
+
+    try (PreparedStatement stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery()) {
+      return resultsToTable(rs, "Restaurants");
+    }
+  }
 }
