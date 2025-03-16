@@ -95,11 +95,15 @@ public class View {
    * Prints the main program menu
    */
   public void printMainMenu() {
-    print("""
+    /*print("""
         1. View Database
         2. Modify Database
         3. Exit
-        """);
+        """);*/
+   print("""
+        1. View Database
+        2. Exit
+        """); 
   }
 
 
