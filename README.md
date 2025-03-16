@@ -14,6 +14,7 @@ This is the repository of Team DVA's final project for AUK's SDT 305 Principles 
   - Hosted an online database for testing
   - Created dummy database inserts
   - Worked on creating the controller communication with handlers
+  - Implemented the main loop
 - Andrii Tivonenko
   - Wrote SQL statements
   - Implemented Handler logic
