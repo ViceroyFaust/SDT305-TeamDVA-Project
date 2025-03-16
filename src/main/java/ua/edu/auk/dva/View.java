@@ -95,11 +95,15 @@ public class View {
    * Prints the main program menu
    */
   public void printMainMenu() {
-    print("""
+    /*print("""
         1. View Database
         2. Modify Database
         3. Exit
-        """);
+        """);*/
+   print("""
+        1. View Database
+        2. Exit
+        """); 
   }
 
 
@@ -116,6 +120,7 @@ public class View {
         6. View Employee Schedule
         7. View Production Stations
         8. View Restaurants
+        0. Exit Submenu
         """);
   }
 
@@ -131,6 +136,7 @@ public class View {
         5. Update Employee Station
         6. Update Employee Training
         7. Update Manager
+        0. Exit Submenu
         """);
   }
 
@@ -145,9 +151,9 @@ public class View {
 
     for (int i = 0; i < table.getRows(); i++) {
       for (int j = 0; j < table.getCols() - 1; j++) {
-        print(table.get(i, j) + "\t");
+        System.out.printf("%24s", table.get(i, j));
       }
-      print(table.get(i, table.getCols() - 1) + "\n");
+      System.out.printf("%24s%n", table.get(i, table.getCols() - 1));
     }
   }
 
