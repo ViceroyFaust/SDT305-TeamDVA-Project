@@ -1,5 +1,6 @@
 package ua.edu.auk.dva.handlers;
 
+import java.sql.ResultSetMetaData;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.Table;
 import ua.edu.auk.dva.View;
@@ -18,6 +19,59 @@ public class HandleDQL implements RequestHandler{
     interface SqlExceptionThrowingFunction<R> {
         R get() throws SQLException;
     }
+
+    /**
+ * Converts a ResultSet to a table of strings.
+ *
+ * @param results the results of a query
+ * @param name the name of the table
+ * @return a table of strings
+ * @throws SQLException if any exception occurs during this process
+ */
+private Table resultsToTable(ResultSet results, String name) throws SQLException {
+  ResultSetMetaData metaData = results.getMetaData();
+  int columns = metaData.getColumnCount();
+  Table table = new Table(columns, name);
+
+  // Add the column headers to the table
+  for (int i = 1; i <= columns; i++) {
+    table.add(metaData.getColumnLabel(i));
+  }
+  // Add the column values to the table
+  while (results.next()) {
+    for (int i = 1; i <= columns; i++) {
+      table.add(results.getString(i));
+    }
+  }
+
+  return table;
+}
+
+/**
+ * Converts a ResultSet to a table of strings.
+ *
+ * @param results the results of a query
+ * @return a table of strings
+ * @throws SQLException if any exception occurs during this process
+ */
+private Table resultsToTable(ResultSet results) throws SQLException {
+  ResultSetMetaData metaData = results.getMetaData();
+  int columns = metaData.getColumnCount();
+  Table table = new Table(columns);
+
+  // Add the column headers to the table
+  for (int i = 1; i <= columns; i++) {
+    table.add(metaData.getColumnLabel(i));
+  }
+  // Add the column values to the table
+  while (results.next()) {
+    for (int i = 1; i <= columns; i++) {
+      table.add(results.getString(i));
+    }
+  }
+
+  return table;
+}
     private final Map<String, SqlExceptionThrowingFunction<Table>> functionMap = new HashMap<>();
     private void fillMap(){
         functionMap.put("1", this::getEmployees);
@@ -44,22 +98,11 @@ public class HandleDQL implements RequestHandler{
      */
     public Table getEmployeesNoArgs() throws SQLException {
         Connection conn = this.database.getDatabase();
-        String sql = "SELECT EmployeeId, FirstName, LastName, Position, Salary, DateJoined, RestaurantId FROM Employee";
+        String sql = "SELECT * FROM Employee";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            Table table = new Table(6, "Employees");
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("EmployeeId")));
-                table.add(rs.getString("FirstName"));
-                table.add(rs.getString("LastName"));
-                table.add(rs.getString("Position"));
-                table.add(String.valueOf(rs.getInt("Salary")));
-                table.add(String.valueOf(rs.getDate("DateJoined")));
-                table.add(String.valueOf(rs.getInt("RestaurantId")));
-            }
-            return table;
+            return resultsToTable(rs, "Employees");
         }
     }
     /**
@@ -91,18 +134,7 @@ public class HandleDQL implements RequestHandler{
             }
 
             ResultSet rs = stmt.executeQuery();
-            Table table = new Table(7, "Employees");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("EmployeeId")));
-                table.add(rs.getString("FirstName"));
-                table.add(rs.getString("LastName"));
-                table.add(String.valueOf(rs.getInt("Salary")));
-                table.add(String.valueOf(rs.getDate("DateJoined")));
-                table.add(rs.getString("Position"));
-                table.add(String.valueOf(rs.getInt("RestaurantId")));
-            }
-            return table;
+            return resultsToTable(rs, "Employee(s)");
         }
     }
 
@@ -139,16 +171,7 @@ public class HandleDQL implements RequestHandler{
             }
 
             ResultSet rs = stmt.executeQuery();
-            Table table = new Table(5, "Employee Stations");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("EmployeeId")));
-                table.add(rs.getString("FirstName"));
-                table.add(rs.getString("LastName"));
-                table.add(rs.getString("StationName"));
-                table.add(rs.getString("RelationType"));
-            }
-            return table;
+            return resultsToTable(rs, "Employee Stations");
         }
     }
 
@@ -181,17 +204,7 @@ public class HandleDQL implements RequestHandler{
             }
 
             ResultSet rs = stmt.executeQuery();
-            Table table = new Table(6, "Instructor-Student Assignments");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("TrainerId")));
-                table.add(rs.getString("InstructorFirstName"));
-                table.add(rs.getString("InstructorLastName"));
-                table.add(String.valueOf(rs.getInt("EmployeeId")));
-                table.add(rs.getString("StudentFirstName"));
-                table.add(rs.getString("StudentLastName"));
-            }
-            return table;
+            return resultsToTable(rs, "Instructor Students");
         }
     }
     /**
@@ -223,16 +236,7 @@ public class HandleDQL implements RequestHandler{
             }
 
             ResultSet rs = stmt.executeQuery();
-            Table table = new Table(5, "Manager-Station Assignments");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("ManagerId")));
-                table.add(rs.getString("ManagerFirstName"));
-                table.add(rs.getString("ManagerLastName"));
-                table.add(rs.getString("StationName"));
-                table.add(rs.getString("Category"));
-            }
-            return table;
+            return resultsToTable(rs, "Manager Stations");
         }
     }
     /**
@@ -262,17 +266,7 @@ public class HandleDQL implements RequestHandler{
             }
 
             ResultSet rs = stmt.executeQuery();
-            Table table = new Table(6, "Employee Schedule");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("EmployeeId")));
-                table.add(rs.getString("FirstName"));
-                table.add(rs.getString("LastName"));
-                table.add(String.valueOf(rs.getDate("Date")));
-                table.add(String.valueOf(rs.getTime("StartTime")));
-                table.add(String.valueOf(rs.getTime("EndTime")));
-            }
-            return table;
+            return resultsToTable(rs, "Employee Schedule");
         }
     }
     /**
@@ -285,14 +279,7 @@ public class HandleDQL implements RequestHandler{
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            Table table = new Table(2, "Production Stations");
-
-            while (rs.next()) {
-                table.add(rs.getString("Name"));
-                table.add(rs.getString("Category"));
-            }
-            return table;
+            return resultsToTable(rs, "Production Stations");
         }
     }
     /**
@@ -305,16 +292,7 @@ public class HandleDQL implements RequestHandler{
 
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            Table table = new Table(4, "Restaurants");
-
-            while (rs.next()) {
-                table.add(String.valueOf(rs.getInt("RestaurantId")));
-                table.add(String.valueOf(rs.getTime("OpeningTime")));
-                table.add(String.valueOf(rs.getTime("ClosingTime")));
-                table.add(String.valueOf(rs.getDate("DateOpened")));
-            }
-            return table;
+            return resultsToTable(rs, "Restaurants");
         }
     }
 }
