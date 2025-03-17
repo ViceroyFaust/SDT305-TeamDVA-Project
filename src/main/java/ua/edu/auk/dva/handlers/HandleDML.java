@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
-
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.View;
 
@@ -18,9 +17,12 @@ public class HandleDML implements RequestHandler {
 
   @FunctionalInterface
   interface SqlExceptionThrowingFunction<R> {
+
     R get() throws SQLException;
   }
+
   private final Map<String, SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
+
   private void fillMap() {
     functionMap.put("1", this::addEmployee);
     functionMap.put("2", this::addProductionStation);
@@ -41,12 +43,17 @@ public class HandleDML implements RequestHandler {
 
   public HandlerReturnModel addEmployee() {
     view.print("Please enter the following data for the new employee:\n");
-    Map<String, String> employeeData = view.multiPrompt(new String[]{"Employee ID", "First name", "Last name", "Salary", "Date joined (YYYY-MM-DD)", "Position", "Restaurant ID"});
+    Map<String, String> employeeData = view.multiPrompt(
+        new String[]{"Employee ID", "First name", "Last name", "Salary", "Date joined (YYYY-MM-DD)",
+            "Position", "Restaurant ID"});
 
     String salaryValue = employeeData.get("Salary").isEmpty() ? "NULL" : employeeData.get("Salary");
-    String dateValue = employeeData.get("Date joined (YYYY-MM-DD)").isEmpty() ? "NULL" : "'" + employeeData.get("Date joined (YYYY-MM-DD)") + "'";
+    String dateValue = employeeData.get("Date joined (YYYY-MM-DD)").isEmpty() ? "NULL"
+        : "'" + employeeData.get("Date joined (YYYY-MM-DD)") + "'";
 
-    String sql = "INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId) VALUES (" +
+    String sql =
+        "INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId) VALUES ("
+            +
             employeeData.get("Employee ID") + ", '" +
             employeeData.get("First name") + "', '" +
             employeeData.get("Last name") + "', " +
@@ -54,24 +61,21 @@ public class HandleDML implements RequestHandler {
             dateValue + ", '" +
             employeeData.get("Position") + "', " +
             employeeData.get("Restaurant ID") + ")";
-    try {
-      Connection conn = database.getDatabase();
-      Statement stmt = conn.createStatement();
+    // We do not close the connection until the end of the program loop, since we want to continue
+    // using the database until the user is done
+    Connection conn = database.getDatabase();
+    try (Statement stmt = conn.createStatement()) {
 
       int rowsInserted = stmt.executeUpdate(sql);
 
       if (rowsInserted > 0) {
         conn.commit();
         System.out.println("Inserted successfully.");
-      } else {
-        System.err.println("Insertion failed.");
-      }
-      if(rowsInserted > 0) {
         return new HandlerReturnModel(true);
       } else {
+        System.err.println("Insertion failed.");
         return new HandlerReturnModel(false);
       }
-
     } catch (SQLException e) {
       System.err.println("SQL Error: " + e.getMessage());
       return new HandlerReturnModel(false);
@@ -81,11 +85,10 @@ public class HandleDML implements RequestHandler {
   public HandlerReturnModel addProductionStation() {
     Map<String, String> stationData = view.multiPrompt(new String[]{"Name", "Category"});
     String sql = "INSERT INTO ProductionStation (Name, Category) VALUES ('" +
-            stationData.get("Name") + "', '" + stationData.get("Category") + "')";
+        stationData.get("Name") + "', '" + stationData.get("Category") + "')";
 
-    try{
-      Connection conn = database.getDatabase();
-      Statement stmt = conn.createStatement();
+    Connection conn = database.getDatabase();
+    try (Statement stmt = conn.createStatement();) {
       int rowsInserted = stmt.executeUpdate(sql);
 
       if (rowsInserted > 0) {
@@ -107,16 +110,18 @@ public class HandleDML implements RequestHandler {
   public HandlerReturnModel updateManager() {
     Map<String, String> managerData = view.multiPrompt(new String[]{"Manager ID", "Station Name"});
 
-    String checkStationSQL = "SELECT Name FROM ProductionStation WHERE Name = '" + managerData.get("Station Name") + "'";
-    String updateStationSQL = "UPDATE Manages SET StationName = '" + managerData.get("Station Name") + "' WHERE ManagerId = " + managerData.get("Manager ID");
+    String checkStationSQL =
+        "SELECT Name FROM ProductionStation WHERE Name = '" + managerData.get("Station Name") + "'";
+    String updateStationSQL = "UPDATE Manages SET StationName = '" + managerData.get("Station Name")
+        + "' WHERE ManagerId = " + managerData.get("Manager ID");
 
-    try {
-      Connection conn = database.getDatabase();
-      Statement stmt = conn.createStatement();
-      ResultSet rs = stmt.executeQuery(checkStationSQL);
+    Connection conn = database.getDatabase();
+    try (Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(checkStationSQL)) {
 
       if (!rs.next()) {
-        System.err.println("The station '" + managerData.get("Station Name") + "' does not exist in ProductionStation.");
+        System.err.println("The station '" + managerData.get("Station Name")
+            + "' does not exist in ProductionStation.");
         return new HandlerReturnModel(false);
       }
 

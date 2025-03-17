@@ -141,9 +141,9 @@ public class HandleDQL implements RequestHandler {
       for (int i = 0; i < employeeIds.length; i++) {
         stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
       }
-
-      ResultSet rs = stmt.executeQuery();
-      return resultsToModel(rs, "Employee(s)");
+      try (ResultSet rs = stmt.executeQuery()) {
+        return resultsToModel(rs, "Employee(s)");
+      }
     }
   }
 
@@ -160,8 +160,9 @@ public class HandleDQL implements RequestHandler {
 
       try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
           statement.setString(1, request);
-          ResultSet results = statement.executeQuery();
-          return resultsToModel(results, "Employee by Position");
+          try (ResultSet results = statement.executeQuery()) {
+            return resultsToModel(results, "Employee by Position");
+          }
       }
   }
 
@@ -200,8 +201,9 @@ public class HandleDQL implements RequestHandler {
         stmt.setInt(i + 1 + employeeIds.length, Integer.parseInt(employeeIds[i]));
       }
 
-      ResultSet rs = stmt.executeQuery();
-      return resultsToModel(rs, "Employee Stations");
+      try (ResultSet rs = stmt.executeQuery()) {
+        return resultsToModel(rs, "Employee Stations");
+      }
     }
   }
 
@@ -236,8 +238,9 @@ public class HandleDQL implements RequestHandler {
         stmt.setInt(i + 1, Integer.parseInt(instructorIds[i]));
       }
 
-      ResultSet rs = stmt.executeQuery();
-      return resultsToModel(rs, "Instructor Students");
+      try (ResultSet rs = stmt.executeQuery()) {
+        return resultsToModel(rs, "Instructor Students");
+      }
     }
   }
 
@@ -272,8 +275,9 @@ public class HandleDQL implements RequestHandler {
         stmt.setInt(i + 1, Integer.parseInt(managerIds[i]));
       }
 
-      ResultSet rs = stmt.executeQuery();
-      return resultsToModel(rs, "Manager Stations");
+      try (ResultSet rs = stmt.executeQuery()) {
+        return resultsToModel(rs, "Manager Stations");
+      }
     }
   }
 
@@ -306,8 +310,9 @@ public class HandleDQL implements RequestHandler {
         stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
       }
 
-      ResultSet rs = stmt.executeQuery();
-      return resultsToModel(rs, "Employee Schedule");
+      try (ResultSet rs = stmt.executeQuery()) {
+        return resultsToModel(rs, "Employee Schedule");
+      }
     }
   }
 
