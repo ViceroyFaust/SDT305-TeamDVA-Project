@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import ua.edu.auk.dva.handlers.HandleDML;
 import ua.edu.auk.dva.handlers.HandleDQL;
+import ua.edu.auk.dva.handlers.HandlerReturnModel;
 import ua.edu.auk.dva.handlers.RequestHandler;
 
 public class Main {
@@ -64,12 +65,17 @@ public class Main {
           if (choice.equals("0")) {
               return;
           }
-        Table table = handler.handleRequest(choice, new String[]{});
-        if (table == null) {
+        HandlerReturnModel returnModel = handler.handleRequest(choice, new String[]{});
+        if (!returnModel.isSuccess()) {
           view.print("Failed to proceed with the request");
-          return;
+          continue;
         }
-        view.printTable(table);
+
+        if (returnModel.getTable() != null)
+          view.printTable(returnModel.getTable());
+        else
+         view.print("Operation succeeded");
+
       } catch (Exception e) {
         System.out.println("An error occurred: " + e.getMessage());
       }

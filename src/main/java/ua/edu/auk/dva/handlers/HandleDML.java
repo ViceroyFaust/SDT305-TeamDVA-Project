@@ -17,8 +17,8 @@ public class HandleDML implements RequestHandler {
   }
 
   @Override
-  public Table handleRequest(String request, String[] args) throws SQLException {
+  public HandlerReturnModel handleRequest(String request, String[] args) throws SQLException {
     System.out.println("Handling DML request: " + request);
-    return null;
+    return new HandlerReturnModel(false);
   }
 }
