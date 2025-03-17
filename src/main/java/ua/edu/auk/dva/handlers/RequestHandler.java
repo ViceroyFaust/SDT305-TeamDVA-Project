@@ -5,5 +5,5 @@ import ua.edu.auk.dva.Table;
 
 public interface RequestHandler {
 
-  HandlerReturnModel handleRequest(String request, String[] args) throws SQLException;
+  HandlerReturnModel handleRequest(String request) throws SQLException;
 }

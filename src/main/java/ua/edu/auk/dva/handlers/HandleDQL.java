@@ -93,7 +93,7 @@ public class HandleDQL implements RequestHandler {
   }
 
   @Override
-  public HandlerReturnModel handleRequest(String request, String[] args) throws SQLException {
+  public HandlerReturnModel handleRequest(String request) throws SQLException {
     System.out.println("Handling DQL request: " + request);
     return functionMap.get(request).get();
   }

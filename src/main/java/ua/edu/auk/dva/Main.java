@@ -64,7 +64,7 @@ public class Main {
           if (choice.equals("0")) {
               return;
           }
-        HandlerReturnModel returnModel = handler.handleRequest(choice, new String[]{});
+        HandlerReturnModel returnModel = handler.handleRequest(choice);
         if (!returnModel.isSuccess()) {
           view.print("Failed to proceed with the request");
           continue;
