@@ -129,12 +129,8 @@ public class View {
     print("""
         --------------------------------------
         1. Add Employee
-        2. Add Restaurant
-        3. Add Production Station
-        4. Add Schedule
-        5. Update Employee Station
-        6. Update Employee Training
-        7. Update Manager
+        2. Add Production Station
+        3. Update Manager
         0. Exit Submenu
         --------------------------------------
         """);
