@@ -19,7 +19,6 @@ public class HandleDQL implements RequestHandler {
 
   @FunctionalInterface
   interface SqlExceptionThrowingFunction<R> {
-
     R get() throws SQLException;
   }
 
@@ -31,7 +30,7 @@ public class HandleDQL implements RequestHandler {
    * @return a table of strings
    * @throws SQLException if any exception occurs during this process
    */
-  private Table resultsToTable(ResultSet results, String name) throws SQLException {
+  private HandlerReturnModel resultsToModel(ResultSet results, String name) throws SQLException {
     ResultSetMetaData metaData = results.getMetaData();
     int columns = metaData.getColumnCount();
     Table table = new Table(columns, name);
@@ -46,8 +45,7 @@ public class HandleDQL implements RequestHandler {
         table.add(results.getString(i));
       }
     }
-
-    return table;
+    return new HandlerReturnModel(table);
   }
 
   /**
@@ -57,7 +55,7 @@ public class HandleDQL implements RequestHandler {
    * @return a table of strings
    * @throws SQLException if any exception occurs during this process
    */
-  private Table resultsToTable(ResultSet results) throws SQLException {
+  private HandlerReturnModel resultsToModel(ResultSet results) throws SQLException {
     ResultSetMetaData metaData = results.getMetaData();
     int columns = metaData.getColumnCount();
     Table table = new Table(columns);
@@ -72,11 +70,10 @@ public class HandleDQL implements RequestHandler {
         table.add(results.getString(i));
       }
     }
-
-    return table;
+    return new HandlerReturnModel(table);
   }
 
-  private final Map<String, SqlExceptionThrowingFunction<Table>> functionMap = new HashMap<>();
+  private final Map<String, SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
 
   private void fillMap() {
     functionMap.put("1", this::getEmployees);
@@ -96,7 +93,7 @@ public class HandleDQL implements RequestHandler {
   }
 
   @Override
-  public Table handleRequest(String request, String[] args) throws SQLException {
+  public HandlerReturnModel handleRequest(String request, String[] args) throws SQLException {
     System.out.println("Handling DQL request: " + request);
     return functionMap.get(request).get();
   }
@@ -104,13 +101,13 @@ public class HandleDQL implements RequestHandler {
   /**
    * Fetch all employees from the database and return as a Table object.
    */
-  public Table getEmployeesNoArgs() throws SQLException {
+  public HandlerReturnModel getEmployeesNoArgs() throws SQLException {
     Connection conn = this.database.getDatabase();
     String sql = "SELECT * FROM Employee";
 
     try (PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery()) {
-      return resultsToTable(rs, "Employees");
+      return resultsToModel(rs, "Employees");
     }
   }
 
@@ -119,7 +116,7 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing employee details
    */
-  public Table getEmployees() throws SQLException {
+  public HandlerReturnModel getEmployees() throws SQLException {
     String request = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,) " +
         "or nothing to output all employees: ");
 
@@ -146,7 +143,7 @@ public class HandleDQL implements RequestHandler {
       }
 
       ResultSet rs = stmt.executeQuery();
-      return resultsToTable(rs, "Employee(s)");
+      return resultsToModel(rs, "Employee(s)");
     }
   }
 
@@ -156,7 +153,7 @@ public class HandleDQL implements RequestHandler {
      * @return A table representing said employees
      * @throws SQLException if an error occurs with the database
      */
-  public Table getEmployeeByPosition() throws SQLException {
+  public HandlerReturnModel getEmployeeByPosition() throws SQLException {
       String request = view.prompt("Please enter position: ");
 
       String sql = "SELECT * FROM Employee WHERE Position = ? ;";
@@ -164,7 +161,7 @@ public class HandleDQL implements RequestHandler {
       try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
           statement.setString(1, request);
           ResultSet results = statement.executeQuery();
-          return resultsToTable(results, "Employee by Position");
+          return resultsToModel(results, "Employee by Position");
       }
   }
 
@@ -173,7 +170,7 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing employee-station mapping
    */
-  public Table getEmployeeStations() throws SQLException {
+  public HandlerReturnModel getEmployeeStations() throws SQLException {
     String[] employeeIds = view.prompt(
         "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
     if (employeeIds.length == 0) {
@@ -204,7 +201,7 @@ public class HandleDQL implements RequestHandler {
       }
 
       ResultSet rs = stmt.executeQuery();
-      return resultsToTable(rs, "Employee Stations");
+      return resultsToModel(rs, "Employee Stations");
     }
   }
 
@@ -213,7 +210,7 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing instructor-student relationships
    */
-  public Table getInstructorStudents() throws SQLException {
+  public HandlerReturnModel getInstructorStudents() throws SQLException {
     String[] instructorIds = view.prompt(
         "Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ").split(",");
     if (instructorIds.length == 0) {
@@ -240,7 +237,7 @@ public class HandleDQL implements RequestHandler {
       }
 
       ResultSet rs = stmt.executeQuery();
-      return resultsToTable(rs, "Instructor Students");
+      return resultsToModel(rs, "Instructor Students");
     }
   }
 
@@ -249,7 +246,7 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing manager-station relationships
    */
-  public Table getManagersStations() throws SQLException {
+  public HandlerReturnModel getManagersStations() throws SQLException {
     String[] managerIds = view.prompt(
         "Please enter the Manager IDs separated by commas (ex. 1,2,3,): ").split(",");
     if (managerIds.length == 0) {
@@ -276,7 +273,7 @@ public class HandleDQL implements RequestHandler {
       }
 
       ResultSet rs = stmt.executeQuery();
-      return resultsToTable(rs, "Manager Stations");
+      return resultsToModel(rs, "Manager Stations");
     }
   }
 
@@ -285,7 +282,7 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing employee schedule
    */
-  public Table getEmployeeSchedule() throws SQLException {
+  public HandlerReturnModel getEmployeeSchedule() throws SQLException {
     String[] employeeIds = view.prompt(
         "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
     if (employeeIds.length == 0) {
@@ -310,7 +307,7 @@ public class HandleDQL implements RequestHandler {
       }
 
       ResultSet rs = stmt.executeQuery();
-      return resultsToTable(rs, "Employee Schedule");
+      return resultsToModel(rs, "Employee Schedule");
     }
   }
 
@@ -319,13 +316,13 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing all production stations
    */
-  public Table getProductionStations() throws SQLException {
+  public HandlerReturnModel getProductionStations() throws SQLException {
     Connection conn = this.database.getDatabase();
     String sql = "SELECT Name, Category FROM ProductionStation";
 
     try (PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery()) {
-      return resultsToTable(rs, "Production Stations");
+      return resultsToModel(rs, "Production Stations");
     }
   }
 
@@ -334,13 +331,13 @@ public class HandleDQL implements RequestHandler {
    *
    * @return Table containing all restaurants
    */
-  public Table getRestaurants() throws SQLException {
+  public HandlerReturnModel getRestaurants() throws SQLException {
     Connection conn = this.database.getDatabase();
     String sql = "SELECT RestaurantId, OpeningTime, ClosingTime, DateOpened FROM Restaurant";
 
     try (PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery()) {
-      return resultsToTable(rs, "Restaurants");
+      return resultsToModel(rs, "Restaurants");
     }
   }
 }
