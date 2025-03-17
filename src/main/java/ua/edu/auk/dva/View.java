@@ -95,15 +95,11 @@ public class View {
    * Prints the main program menu
    */
   public void printMainMenu() {
-    /*print("""
+    print("""
         1. View Database
         2. Modify Database
         3. Exit
-        """);*/
-   print("""
-        1. View Database
-        2. Exit
-        """); 
+        """);
   }
 
 
@@ -112,6 +108,7 @@ public class View {
    */
   public void printQueryMenu() {
     print("""
+        --------------------------------------
         1. View Employees
         2. View Employees by Position
         3. View Employee's Stations
@@ -121,6 +118,7 @@ public class View {
         7. View Production Stations
         8. View Restaurants
         0. Exit Submenu
+        --------------------------------------
         """);
   }
 
@@ -129,14 +127,12 @@ public class View {
    */
   public void printModifyMenu() {
     print("""
+        --------------------------------------
         1. Add Employee
-        2. Add Restaurant
-        3. Add Production Station
-        4. Add Schedule
-        5. Update Employee Station
-        6. Update Employee Training
-        7. Update Manager
+        2. Add Production Station
+        3. Update Manager
         0. Exit Submenu
+        --------------------------------------
         """);
   }
 
