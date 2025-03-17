@@ -1,7 +1,6 @@
 package ua.edu.auk.dva.handlers;
 
 
-import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,7 +20,7 @@ public class HandleDML implements RequestHandler {
   interface SqlExceptionThrowingFunction<R> {
     R get() throws SQLException;
   }
-  private final Map<String, HandleDQL.SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
+  private final Map<String, SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
   private void fillMap() {
     functionMap.put("1", this::addEmployee);
     functionMap.put("2", this::addProductionStation);
