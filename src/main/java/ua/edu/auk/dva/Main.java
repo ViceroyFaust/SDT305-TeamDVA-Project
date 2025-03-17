@@ -2,6 +2,7 @@ package ua.edu.auk.dva;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import ua.edu.auk.dva.handlers.HandleDML;
 import ua.edu.auk.dva.handlers.HandleDQL;
 import ua.edu.auk.dva.handlers.RequestHandler;
 
@@ -33,6 +34,7 @@ public class Main {
 
   private static void mainMenu(View view, Database db) {
     HandleDQL dqlHandler = new HandleDQL(db, view);
+    HandleDML dmlHandler2 = new HandleDML(db, view);
     while (true) {
       view.printMainMenu();
       String userChoice = view.getUserInput();
@@ -41,6 +43,10 @@ public class Main {
           passToHandler(dqlHandler, view::printQueryMenu, view, db);
           break;
         case "2":
+          view.printModifyMenu();
+          passToHandler(dmlHandler2, view::printModifyMenu, view, db);
+          break;
+        case "3":
           System.out.println("Exiting...");
           return;
         default:
