@@ -61,20 +61,23 @@ public class Main {
       try {
         printSubMenu.run();
         String choice = view.getUserInput();
-          if (choice.equals("0")) {
-              return;
-          }
+        if (choice.equals("0")) {
+          return;
+        }
         HandlerReturnModel returnModel = handler.handleRequest(choice);
         if (!returnModel.isSuccess()) {
           view.print("Failed to proceed with the request");
           continue;
         }
 
-        if (returnModel.getTable() != null)
+        if (returnModel.getTable() != null) {
           view.printTable(returnModel.getTable());
-        else
-         view.print("Operation succeeded");
+        } else {
+          view.print("Operation succeeded");
+        }
 
+      } catch (IllegalArgumentException e) {
+        System.out.println("Invalid Input: " + e.getMessage());
       } catch (Exception e) {
         System.out.println("An error occurred: " + e.getMessage());
       }
