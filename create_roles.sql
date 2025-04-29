@@ -1,0 +1,24 @@
+CREATE ROLE IF NOT EXISTS employee_role;
+CREATE ROLE IF NOT EXISTS trainer_role;
+CREATE ROLE IF NOT EXISTS manager_role;
+
+--employee
+GRANT SELECT ON *.* TO employee_role;
+
+--trainer
+GRANT SELECT ON *.* TO trainer_role;
+GRANT INSERT, UPDATE, DELETE ON Train TO trainer_role;
+
+--manager
+GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO manager_role;
+REVOKE INSERT, UPDATE, DELETE ON Restaurant FROM manager_role;
+
+--create users
+CREATE USER IF NOT EXISTS 'employee_user'@'%' IDENTIFIED BY '123';
+GRANT employee_role TO 'employee_user'@'%';
+
+CREATE USER IF NOT EXISTS 'trainer_user'@'%' IDENTIFIED BY '12345';
+GRANT trainer_role TO 'trainer_user'@'%';
+
+CREATE USER IF NOT EXISTS 'manager_user'@'%' IDENTIFIED BY '123456';
+GRANT manager_role TO 'manager_user'@'%';
