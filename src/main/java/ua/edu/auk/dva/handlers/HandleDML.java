@@ -132,22 +132,15 @@ public class HandleDML implements RequestHandler {
   public HandlerReturnModel updateManager() {
     Map<String, String> managerData = view.multiPrompt(new String[]{"Manager ID", "Station Name"});
 
-    String checkStationSQL =
-        "SELECT Name FROM ProductionStation WHERE Name = '" + managerData.get("Station Name") + "'";
-    String updateStationSQL = "UPDATE Manages SET StationName = '" + managerData.get("Station Name")
-        + "' WHERE ManagerId = " + managerData.get("Manager ID");
+    String updateStationSQL = "REPLACE INTO Manages (ManagerId, StationName) VALUES ( ?, ? ) ;";
 
     Connection conn = database.getDatabase();
-    try (Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(checkStationSQL)) {
 
-      if (!rs.next()) {
-        System.err.println("The station '" + managerData.get("Station Name")
-            + "' does not exist in ProductionStation.");
-        return new HandlerReturnModel(false);
-      }
+    try (PreparedStatement stmt = conn.prepareStatement(updateStationSQL)) {
+      stmt.setInt(1, Integer.parseInt(managerData.get("Manager ID")));
+      stmt.setString(2, managerData.get("Station Name"));
 
-      int rowsUpdated = stmt.executeUpdate(updateStationSQL);
+      int rowsUpdated = stmt.executeUpdate();
 
       if (rowsUpdated > 0) {
         conn.commit();
