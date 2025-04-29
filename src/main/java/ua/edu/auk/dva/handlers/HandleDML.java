@@ -100,12 +100,18 @@ public class HandleDML implements RequestHandler {
 
   public HandlerReturnModel addProductionStation() {
     Map<String, String> stationData = view.multiPrompt(new String[]{"Name", "Category"});
-    String sql = "INSERT INTO ProductionStation (Name, Category) VALUES ('" +
-        stationData.get("Name") + "', '" + stationData.get("Category") + "')";
+    String sql =
+        """
+        INSERT INTO ProductionStation (Name, Category)
+        VALUES ( ?, ? );
+        """;
 
     Connection conn = database.getDatabase();
-    try (Statement stmt = conn.createStatement();) {
-      int rowsInserted = stmt.executeUpdate(sql);
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      stmt.setString(1, stationData.get("Name"));
+      stmt.setString(2, stationData.get("Category"));
+
+      int rowsInserted = stmt.executeUpdate();
 
       if (rowsInserted > 0) {
         conn.commit();
