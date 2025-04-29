@@ -29,6 +29,15 @@ public class HandleDML implements RequestHandler {
     functionMap.put("3", this::updateManager);
   }
 
+  private void validateMap(Map<String, String> input) {
+    for (String key : input.keySet()) {
+      if (input.get(key).isBlank()) {
+        throw new IllegalArgumentException(
+            "Cannot have blank data! Declare null explicitly as NULL!");
+      }
+    }
+  }
+
   public HandleDML(Database db, View view) {
     this.database = db;
     this.view = view;
@@ -48,13 +57,7 @@ public class HandleDML implements RequestHandler {
             "Position", "Restaurant ID"});
 
     // Validate improper input
-    for (String key : employeeData.keySet()) {
-      if (employeeData.get(key).isBlank()) {
-        throw new IllegalArgumentException(
-            "Cannot have blank data! Declare null explicitly as NULL!");
-      }
-    }
-
+    validateMap(employeeData);
     String sql =
         """
             INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId)
@@ -96,6 +99,7 @@ public class HandleDML implements RequestHandler {
 
   public HandlerReturnModel addProductionStation() {
     Map<String, String> stationData = view.multiPrompt(new String[]{"Name", "Category"});
+    validateMap(stationData);
     String sql =
         """
             INSERT INTO ProductionStation (Name, Category)
@@ -127,7 +131,7 @@ public class HandleDML implements RequestHandler {
 
   public HandlerReturnModel updateManager() {
     Map<String, String> managerData = view.multiPrompt(new String[]{"Manager ID", "Station Name"});
-
+    validateMap(managerData);
     String updateStationSQL = "REPLACE INTO Manages (ManagerId, StationName) VALUES ( ?, ? ) ;";
 
     Connection conn = database.getDatabase();
