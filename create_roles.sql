@@ -11,7 +11,9 @@ GRANT INSERT, UPDATE, DELETE ON Train TO trainer_role;
 
 --manager
 GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO manager_role;
-REVOKE INSERT, UPDATE, DELETE ON Restaurant FROM manager_role;
+INSERT, UPDATE, DELETE ON Schedule FROM manager_role;
+INSERT, UPDATE, DELETE ON Manages FROM manager_role;
+INSERT, UPDATE, DELETE ON TrainedIn FROM manager_role;
 
 --create users
 CREATE USER IF NOT EXISTS 'employee_user'@'%' IDENTIFIED BY '123';
