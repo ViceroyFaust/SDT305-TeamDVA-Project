@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.Table;
 import ua.edu.auk.dva.View;
@@ -16,9 +17,11 @@ public class HandleDQL implements RequestHandler {
 
   private final Database database;
   private final View view;
+  private final Map<String, SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
 
   @FunctionalInterface
   interface SqlExceptionThrowingFunction<R> {
+
     R get() throws SQLException;
   }
 
@@ -73,7 +76,19 @@ public class HandleDQL implements RequestHandler {
     return new HandlerReturnModel(table);
   }
 
-  private final Map<String, SqlExceptionThrowingFunction<HandlerReturnModel>> functionMap = new HashMap<>();
+  /**
+   * Validates whether a string conforms to a comma separated list of integers
+   * (e.g.:`1,2,3,4,10,12`).
+   *
+   * @param input the String to validate
+   * @throws IllegalArgumentException if the input is not valid
+   */
+  private void validateCommaSeparatedIntegers(String input) {
+    if (!Pattern.matches("^[0-9]+(,[0-9]+)*$", input)) {
+      throw new IllegalArgumentException(
+          "Input must be numbers separated by commas (ex. 1,2,3...)");
+    }
+  }
 
   private void fillMap() {
     functionMap.put("1", this::getEmployees);
@@ -120,9 +135,11 @@ public class HandleDQL implements RequestHandler {
     String request = view.prompt("Please enter the Employee IDs separated by commas (ex. 1,2,3,) " +
         "or nothing to output all employees: ");
 
-      if (request.isEmpty()) {
-          return getEmployeesNoArgs();
-      }
+    if (request.isEmpty()) {
+      return getEmployeesNoArgs();
+    }
+    // Detect illegal patterns to prevent from running malicious code on the server
+    validateCommaSeparatedIntegers(request);
 
     String[] employeeIds = request.split(",");
 
@@ -147,23 +164,25 @@ public class HandleDQL implements RequestHandler {
     }
   }
 
-    /**
-     * Fetches the details of employees with a given position
-     *
-     * @return A table representing said employees
-     * @throws SQLException if an error occurs with the database
-     */
+  /**
+   * Fetches the details of employees with a given position
+   *
+   * @return A table representing said employees
+   * @throws SQLException if an error occurs with the database
+   */
   public HandlerReturnModel getEmployeeByPosition() throws SQLException {
-      String request = view.prompt("Please enter position: ");
+    String request = view.prompt("Please enter position: ");
 
-      String sql = "SELECT * FROM Employee WHERE Position = ? ;";
+    String sql = "SELECT * FROM Employee WHERE Position = ? ;";
 
-      try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
-          statement.setString(1, request);
-          try (ResultSet results = statement.executeQuery()) {
-            return resultsToModel(results, "Employee by Position");
-          }
+    // No need to check for bad input because we aren't directly inserting data
+
+    try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
+      statement.setString(1, request);
+      try (ResultSet results = statement.executeQuery()) {
+        return resultsToModel(results, "Employee by Position");
       }
+    }
   }
 
   /**
@@ -172,11 +191,15 @@ public class HandleDQL implements RequestHandler {
    * @return Table containing employee-station mapping
    */
   public HandlerReturnModel getEmployeeStations() throws SQLException {
-    String[] employeeIds = view.prompt(
-        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
-    if (employeeIds.length == 0) {
-      throw new IllegalArgumentException("Employee IDs array cannot be empty.");
+    String input = view.prompt(
+        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ");
+    if (input.isEmpty()) {
+      throw new IllegalArgumentException("You need to provide input");
     }
+    // Detect illegal patterns to prevent from running malicious code on the server
+    validateCommaSeparatedIntegers(input);
+
+    String[] employeeIds = input.split(",");
 
     Connection conn = this.database.getDatabase();
 
@@ -213,11 +236,13 @@ public class HandleDQL implements RequestHandler {
    * @return Table containing instructor-student relationships
    */
   public HandlerReturnModel getInstructorStudents() throws SQLException {
-    String[] instructorIds = view.prompt(
-        "Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ").split(",");
-    if (instructorIds.length == 0) {
-      throw new IllegalArgumentException("Instructor IDs array cannot be empty.");
-    }
+    String input = view.prompt(
+        "Please enter the Instructor IDs separated by commas (ex. 1,2,3,): ");
+
+    // Detect illegal patterns to prevent from running malicious code on the server
+    validateCommaSeparatedIntegers(input);
+
+    String[] instructorIds = input.split(",");
 
     Connection conn = this.database.getDatabase();
 
@@ -250,11 +275,12 @@ public class HandleDQL implements RequestHandler {
    * @return Table containing manager-station relationships
    */
   public HandlerReturnModel getManagersStations() throws SQLException {
-    String[] managerIds = view.prompt(
-        "Please enter the Manager IDs separated by commas (ex. 1,2,3,): ").split(",");
-    if (managerIds.length == 0) {
-      throw new IllegalArgumentException("Manager IDs array cannot be empty.");
-    }
+    String input = view.prompt(
+        "Please enter the Manager IDs separated by commas (ex. 1,2,3,): ");
+    // Validate the input before proceeding to conform to the list
+    validateCommaSeparatedIntegers(input);
+
+    String[] managerIds = input.split(",");
 
     Connection conn = database.getDatabase();
 
@@ -287,11 +313,11 @@ public class HandleDQL implements RequestHandler {
    * @return Table containing employee schedule
    */
   public HandlerReturnModel getEmployeeSchedule() throws SQLException {
-    String[] employeeIds = view.prompt(
-        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ").split(",");
-    if (employeeIds.length == 0) {
-      throw new IllegalArgumentException("Employee IDs array cannot be empty.");
-    }
+    String input = view.prompt(
+        "Please enter the Employee IDs separated by commas (ex. 1,2,3,): ");
+    validateCommaSeparatedIntegers(input);
+
+    String[] employeeIds = input.split(",");
 
     Connection conn = this.database.getDatabase();
 
