@@ -39,3 +39,7 @@ GRANT manager_role TO 'manager_user'@'%';
 
 CREATE USER IF NOT EXISTS 'director_user'@'%' IDENTIFIED BY '123456789';
 GRANT director_role TO 'director_user'@'%';
+
+--remove online root login
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+FLUSH PRIVILEGES;
