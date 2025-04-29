@@ -21,6 +21,7 @@ public class HandleDQL implements RequestHandler {
 
   @FunctionalInterface
   interface SqlExceptionThrowingFunction<R> {
+
     R get() throws SQLException;
   }
 
@@ -84,7 +85,8 @@ public class HandleDQL implements RequestHandler {
    */
   private void validateCommaSeparatedIntegers(String input) {
     if (!Pattern.matches("^[0-9]+(,[0-9]+)*$", input)) {
-      throw new IllegalArgumentException("Input must be numbers separated by commas (ex. 1,2,3...)");
+      throw new IllegalArgumentException(
+          "Input must be numbers separated by commas (ex. 1,2,3...)");
     }
   }
 
@@ -134,7 +136,7 @@ public class HandleDQL implements RequestHandler {
         "or nothing to output all employees: ");
 
     if (request.isEmpty()) {
-        return getEmployeesNoArgs();
+      return getEmployeesNoArgs();
     }
     // Detect illegal patterns to prevent from running malicious code on the server
     validateCommaSeparatedIntegers(request);
@@ -169,18 +171,18 @@ public class HandleDQL implements RequestHandler {
    * @throws SQLException if an error occurs with the database
    */
   public HandlerReturnModel getEmployeeByPosition() throws SQLException {
-      String request = view.prompt("Please enter position: ");
+    String request = view.prompt("Please enter position: ");
 
-      String sql = "SELECT * FROM Employee WHERE Position = ? ;";
+    String sql = "SELECT * FROM Employee WHERE Position = ? ;";
 
     // No need to check for bad input because we aren't directly inserting data
 
-      try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
-          statement.setString(1, request);
-          try (ResultSet results = statement.executeQuery()) {
-            return resultsToModel(results, "Employee by Position");
-          }
+    try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
+      statement.setString(1, request);
+      try (ResultSet results = statement.executeQuery()) {
+        return resultsToModel(results, "Employee by Position");
       }
+    }
   }
 
   /**
