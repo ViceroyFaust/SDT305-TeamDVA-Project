@@ -4,14 +4,9 @@ package ua.edu.auk.dva.handlers;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.View;
 
@@ -55,15 +50,16 @@ public class HandleDML implements RequestHandler {
     // Validate improper input
     for (String key : employeeData.keySet()) {
       if (employeeData.get(key).isBlank()) {
-        throw new IllegalArgumentException("Cannot have blank data! Declare null explicitly as NULL!");
+        throw new IllegalArgumentException(
+            "Cannot have blank data! Declare null explicitly as NULL!");
       }
     }
 
     String sql =
         """
-        INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId)
-        VALUES ( ?, ?, ?, ?, ?, ?, ? );
-        """;
+            INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId)
+            VALUES ( ?, ?, ?, ?, ?, ?, ? );
+            """;
     // We do not close the connection until the end of the program loop, since we want to continue
     // using the database until the user is done. We use a prepared statement to prevent SQL injection
     Connection conn = database.getDatabase();
@@ -102,9 +98,9 @@ public class HandleDML implements RequestHandler {
     Map<String, String> stationData = view.multiPrompt(new String[]{"Name", "Category"});
     String sql =
         """
-        INSERT INTO ProductionStation (Name, Category)
-        VALUES ( ?, ? );
-        """;
+            INSERT INTO ProductionStation (Name, Category)
+            VALUES ( ?, ? );
+            """;
 
     Connection conn = database.getDatabase();
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
