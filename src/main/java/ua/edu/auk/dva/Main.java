@@ -75,6 +75,8 @@ public class Main {
         else
          view.print("Operation succeeded");
 
+      } catch (IllegalArgumentException e)  {
+        System.out.println("Invalid Input: " + e.getMessage());
       } catch (Exception e) {
         System.out.println("An error occurred: " + e.getMessage());
       }
