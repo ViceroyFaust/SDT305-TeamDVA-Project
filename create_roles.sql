@@ -11,20 +11,19 @@ GRANT SELECT ON *.* TO trainer_role;
 GRANT INSERT, UPDATE, DELETE ON Train TO trainer_role;
 
 --manager
-GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO manager_role;
-INSERT, UPDATE, DELETE ON Schedule FROM manager_role;
-INSERT, UPDATE, DELETE ON Manages FROM manager_role;
-INSERT, UPDATE, DELETE ON TrainedIn FROM manager_role;
+GRANT SELECT ON *.* TO manager_role;
+GRANT INSERT, UPDATE, DELETE ON Schedule FROM manager_role;
+GRANT INSERT, UPDATE, DELETE ON Manages FROM manager_role;
+GRANT INSERT, UPDATE, DELETE ON TrainedIn FROM manager_role;
 
 --director
-GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO director_role;
-INSERT, UPDATE, DELETE ON Schedule FROM director_role;
-INSERT, UPDATE, DELETE ON Train FROM director_role;
-INSERT, UPDATE, DELETE ON ProductionStation FROM director_role;
-INSERT, UPDATE, DELETE ON Employee FROM director_role;
-INSERT, UPDATE, DELETE ON Manages FROM director_role;
-INSERT, UPDATE, DELETE ON TrainedIn FROM director_role;
-INSERT, UPDATE, DELETE ON Restaurant FROM director_role;
+GRANT SELECT ON *.* TO director_role;
+GRANT INSERT, UPDATE, DELETE ON Schedule FROM director_role;
+GRANT INSERT, UPDATE, DELETE ON Train FROM director_role;
+GRANT INSERT, UPDATE, DELETE ON ProductionStation FROM director_role;
+GRANT INSERT, UPDATE, DELETE ON Employee FROM director_role;
+GRANT INSERT, UPDATE, DELETE ON Manages FROM director_role;
+GRANT INSERT, UPDATE, DELETE ON TrainedIn FROM director_role;
 
 
 --create users
