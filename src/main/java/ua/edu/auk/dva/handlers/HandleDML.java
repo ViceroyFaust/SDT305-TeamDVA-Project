@@ -2,11 +2,16 @@ package ua.edu.auk.dva.handlers;
 
 
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.View;
 
@@ -47,26 +52,35 @@ public class HandleDML implements RequestHandler {
         new String[]{"Employee ID", "First name", "Last name", "Salary", "Date joined (YYYY-MM-DD)",
             "Position", "Restaurant ID"});
 
-    String salaryValue = employeeData.get("Salary").isEmpty() ? "NULL" : employeeData.get("Salary");
-    String dateValue = employeeData.get("Date joined (YYYY-MM-DD)").isEmpty() ? "NULL"
-        : "'" + employeeData.get("Date joined (YYYY-MM-DD)") + "'";
+    // Validate improper input
+    for (String key : employeeData.keySet()) {
+      if (employeeData.get(key).isBlank()) {
+        throw new IllegalArgumentException("Cannot have blank data! Declare null explicitly as NULL!");
+      }
+    }
 
     String sql =
-        "INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId) VALUES ("
-            +
-            employeeData.get("Employee ID") + ", '" +
-            employeeData.get("First name") + "', '" +
-            employeeData.get("Last name") + "', " +
-            salaryValue + ", " +
-            dateValue + ", '" +
-            employeeData.get("Position") + "', " +
-            employeeData.get("Restaurant ID") + ")";
+        """
+        INSERT INTO Employee (EmployeeId, FirstName, LastName, Salary, DateJoined, Position, RestaurantId)
+        VALUES ( ?, ?, ?, ?, ?, ?, ? );
+        """;
     // We do not close the connection until the end of the program loop, since we want to continue
-    // using the database until the user is done
+    // using the database until the user is done. We use a prepared statement to prevent SQL injection
     Connection conn = database.getDatabase();
-    try (Statement stmt = conn.createStatement()) {
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      int id = Integer.parseInt(employeeData.get("Employee ID"));
+      int salary = Integer.parseInt(employeeData.get("Salary"));
+      Date date = Date.valueOf(employeeData.get("Date joined (YYYY-MM-DD)"));
 
-      int rowsInserted = stmt.executeUpdate(sql);
+      stmt.setInt(1, id);
+      stmt.setString(2, employeeData.get("First name"));
+      stmt.setString(3, employeeData.get("Last name"));
+      stmt.setInt(4, salary);
+      stmt.setDate(5, date);
+      stmt.setString(6, employeeData.get("Position"));
+      stmt.setInt(7, Integer.parseInt(employeeData.get("Restaurant ID")));
+
+      int rowsInserted = stmt.executeUpdate();
 
       if (rowsInserted > 0) {
         conn.commit();
@@ -79,17 +93,25 @@ public class HandleDML implements RequestHandler {
     } catch (SQLException e) {
       System.err.println("SQL Error: " + e.getMessage());
       return new HandlerReturnModel(false);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Failure to parse input!");
     }
   }
 
   public HandlerReturnModel addProductionStation() {
     Map<String, String> stationData = view.multiPrompt(new String[]{"Name", "Category"});
-    String sql = "INSERT INTO ProductionStation (Name, Category) VALUES ('" +
-        stationData.get("Name") + "', '" + stationData.get("Category") + "')";
+    String sql =
+        """
+        INSERT INTO ProductionStation (Name, Category)
+        VALUES ( ?, ? );
+        """;
 
     Connection conn = database.getDatabase();
-    try (Statement stmt = conn.createStatement();) {
-      int rowsInserted = stmt.executeUpdate(sql);
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+      stmt.setString(1, stationData.get("Name"));
+      stmt.setString(2, stationData.get("Category"));
+
+      int rowsInserted = stmt.executeUpdate();
 
       if (rowsInserted > 0) {
         conn.commit();
@@ -110,22 +132,15 @@ public class HandleDML implements RequestHandler {
   public HandlerReturnModel updateManager() {
     Map<String, String> managerData = view.multiPrompt(new String[]{"Manager ID", "Station Name"});
 
-    String checkStationSQL =
-        "SELECT Name FROM ProductionStation WHERE Name = '" + managerData.get("Station Name") + "'";
-    String updateStationSQL = "UPDATE Manages SET StationName = '" + managerData.get("Station Name")
-        + "' WHERE ManagerId = " + managerData.get("Manager ID");
+    String updateStationSQL = "REPLACE INTO Manages (ManagerId, StationName) VALUES ( ?, ? ) ;";
 
     Connection conn = database.getDatabase();
-    try (Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(checkStationSQL)) {
 
-      if (!rs.next()) {
-        System.err.println("The station '" + managerData.get("Station Name")
-            + "' does not exist in ProductionStation.");
-        return new HandlerReturnModel(false);
-      }
+    try (PreparedStatement stmt = conn.prepareStatement(updateStationSQL)) {
+      stmt.setInt(1, Integer.parseInt(managerData.get("Manager ID")));
+      stmt.setString(2, managerData.get("Station Name"));
 
-      int rowsUpdated = stmt.executeUpdate(updateStationSQL);
+      int rowsUpdated = stmt.executeUpdate();
 
       if (rowsUpdated > 0) {
         conn.commit();
