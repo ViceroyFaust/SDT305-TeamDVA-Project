@@ -7,10 +7,14 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.View;
 
 public class HandleDML implements RequestHandler {
+
+  private static final Logger logger = LogManager.getLogger(HandleDML.class);
 
   private final Database database;
   private final View view;
@@ -32,6 +36,7 @@ public class HandleDML implements RequestHandler {
   private void validateMap(Map<String, String> input) {
     for (String key : input.keySet()) {
       if (input.get(key).isBlank()) {
+        logger.warn("Invalid blank map input");
         throw new IllegalArgumentException(
             "Cannot have blank data! Declare null explicitly as NULL!");
       }
@@ -79,6 +84,7 @@ public class HandleDML implements RequestHandler {
       stmt.setString(6, employeeData.get("Position"));
       stmt.setInt(7, Integer.parseInt(employeeData.get("Restaurant ID")));
 
+      logger.info("Inserting new employee into the database.");
       int rowsInserted = stmt.executeUpdate();
 
       if (rowsInserted > 0) {
@@ -87,12 +93,15 @@ public class HandleDML implements RequestHandler {
         return new HandlerReturnModel(true);
       } else {
         System.err.println("Insertion failed.");
+        logger.warn("Could not insert new employee.");
         return new HandlerReturnModel(false);
       }
     } catch (SQLException e) {
+      logger.error("SQL Error occurred during employee insertion: {}", e.getMessage());
       System.err.println("SQL Error: " + e.getMessage());
       return new HandlerReturnModel(false);
     } catch (IllegalArgumentException e) {
+      logger.error("Failed to parse illegal input during employee insertion.");
       throw new IllegalArgumentException("Failure to parse input!");
     }
   }
@@ -111,18 +120,22 @@ public class HandleDML implements RequestHandler {
       stmt.setString(1, stationData.get("Name"));
       stmt.setString(2, stationData.get("Category"));
 
+      logger.info("Inserting new production station.");
       int rowsInserted = stmt.executeUpdate();
 
       if (rowsInserted > 0) {
         conn.commit();
+        logger.info("Production station inserted successfully.");
         System.out.println("Station inserted successfully.");
         return new HandlerReturnModel(true);
       } else {
+        logger.error("Insertion of production station failed.");
         System.err.println("Insertion failed.");
         return new HandlerReturnModel(false);
       }
 
     } catch (SQLException e) {
+      logger.error("SQL Error occurred during production station insertion: {}", e.getMessage());
       System.err.println("SQL Error: " + e.getMessage());
       return new HandlerReturnModel(false);
     }
@@ -140,18 +153,22 @@ public class HandleDML implements RequestHandler {
       stmt.setInt(1, Integer.parseInt(managerData.get("Manager ID")));
       stmt.setString(2, managerData.get("Station Name"));
 
+      logger.info("Updating a manager's stations.");
       int rowsUpdated = stmt.executeUpdate();
 
       if (rowsUpdated > 0) {
         conn.commit();
+        logger.info("Successfully updated a manager's stations.");
         System.out.println("Manager updated successfully.");
         return new HandlerReturnModel(true);
       } else {
+        logger.error("Manager station update failed.");
         System.err.println("Update failed.");
         return new HandlerReturnModel(false);
       }
 
     } catch (SQLException e) {
+      logger.error("An SQL error occurred during manager station update: {}", e.getMessage());
       System.err.println("SQL Error: " + e.getMessage());
       return new HandlerReturnModel(false);
     }

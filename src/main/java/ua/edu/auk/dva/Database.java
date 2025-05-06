@@ -3,11 +3,15 @@ package ua.edu.auk.dva;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * An abstraction of the database connection
  */
 public class Database implements AutoCloseable {
+
+  private static final Logger logger = LogManager.getLogger(Database.class);
 
   private final Connection database;
 
@@ -20,6 +24,7 @@ public class Database implements AutoCloseable {
    * @throws SQLException if an SQL error occurs
    */
   public Database(String URI, String user, String pass) throws SQLException {
+    logger.info("Database instantiation...");
     database = DriverManager.getConnection(URI, user, pass);
     database.setAutoCommit(false);
   }
@@ -30,6 +35,7 @@ public class Database implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
+    logger.info("Database closing...");
     database.close();
   }
 }
