@@ -18,13 +18,13 @@ public class Main {
     String dbURI = view.promptDatabaseURI();
     String dbUser = view.promptDatabaseUser();
     String dbPass = view.promptDatabasePass();
-    logger.info("{} is attempting to connect to {} .", dbUser, dbURI);
+    logger.info("{} is attempting to connect to {}.", dbUser, dbURI);
     // Try-with-resources
     try (Database db = new Database(dbURI, dbUser, dbPass)) {
       // Retrieve the database connection object
       Connection connection = db.getDatabase();
       if (connection != null && !connection.isClosed()) {
-        logger.info("{} successfully connected to {} .", dbUser, dbURI);
+        logger.info("{} successfully connected to {}.", dbUser, dbURI);
         view.print("Successfully connected to " + dbURI + "!\n");
         mainMenu(view, db);
       } else {
@@ -76,7 +76,7 @@ public class Main {
         printSubMenu.run();
         String choice = view.getUserInput();
         if (choice.equals("0")) {
-          logger.info("Exiting handler {} .", handler.getClass().getName());
+          logger.info("Exiting {}.", handler.getClass().getSimpleName());
           return;
         }
         HandlerReturnModel returnModel = handler.handleRequest(choice);
