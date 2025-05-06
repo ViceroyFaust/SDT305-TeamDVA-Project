@@ -15,6 +15,8 @@ The project can be found at its [GitHub repository](https://github.com/ViceroyFa
 ## Technologies Used
 - Java 21 JDK
 	-  Used for developing the project. The JRE can be used for running the software
+- Log4J2 v2.24.3
+	- Used as our logging system
 - MySQL Connector for Java 8.0.33
 	- A Java driver for MySQL
 - Gradle 8.10 and compatible versions
@@ -31,7 +33,7 @@ Since this is a command-line program, simply run the pre-built jar-file from the
 
 `$ java -jar DVA-Database-Client.jar `
 
-In case of errors, use the [Building and Running from Source](####Building%20and%20Running%20from%20Source) steps instead. 
+In case of errors, use the [Building and Running from Source](#Building%20and%20Running%20from%20Source) steps instead. 
 #### Building and Running from Source
 Since the project uses the Gradle build system, compiling and running is trivial. On Unix-based systems, run the provided `gradlew` wrapper. On Windows, use `gradlew.bat`.
 
@@ -43,7 +45,7 @@ Alternatively, build and package the application with a JAR file.
 
 `$ ./gradlew fatJar`
 
-This command will create a JAR file that you will be able to run more reliably than letting the build system run the program for you. Once the above command has finished executing, go to the `build/libs` directory, which will contain the jar-file. Simply run it as you would in the [JAR](####JAR) section.
+This command will create a JAR file that you will be able to run more reliably than letting the build system run the program for you. Once the above command has finished executing, go to the `build/libs` directory, which will contain the jar-file. Simply run it as you would in the [JAR](#JAR) section.
 ### The DB Server 
 Explaining how to run the database server is beyond the scope of this documentation. However, this manual will provide general steps and suggestions.
 
@@ -90,6 +92,12 @@ After reviewing the server configuration, our team settled on the following:
 		- Has read access to the database
 		- Has read-write access to 'Schedule', 'Train', 'ProductionStation', 'Employee', 'Manages', and 'TrainedIn', as those relations fall within their area of responsibility.
 None of the new roles allow the users to access anything outside of the 'restaurant' database, thus preventing security leaks. Additionally, while director has a broad set of permissions, they are not allowed to modify 'Restaurant', as that can only be modified by the developers - the root user.
+### Logging (client side)
+Initially, this project did not use any kind of logging, besides the info dumped to the terminal for the user to interact with.
+
+Following our review, our team added Log4J2 logging features to our application. Since the client itself is console-based, the logging is done to a separate file under the `logs/` directory. The logger logs important actions within the business logic of the program, such as connecting to or disconnecting from the database, and logs errors such as invalid input.
+
+This logging enabled the developers to quickly identify where an error might have occurred in the code. Furthermore, it allows the user to see detailed information on why the application might have failed to connect to a server. Or, a company could be able to see if any of their users tried to escalate privilege from an unprivileged company computer.
 
 ---
 Document Version: 2025-05-06
