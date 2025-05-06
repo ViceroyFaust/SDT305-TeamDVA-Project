@@ -1,44 +1,96 @@
-# SDT 305 Team DVA Final Project
-This is the repository of Team DVA's final project for AUK's SDT 305 Principles of Database Management Course.
+# Team DVA: MySQL DB Restaurant Client
+---
+## Project Overview
+Team DVA was formed to create a client and database around a custom idea for SDT 305: Database Systems. Team DVA chose to create a database schema around a restaurant, as one of the team members has experience working at one.
 
-## Team Members
-- Danylo Rybchynskyi
-  - Database Design
-  - System Design
-  - Team Lead
-  - Documentation
-  - Coded View, Table, and ResultsToTable
-  - Code reviews and bugfixes
-  - Worked on Video Presentation
-- Vladyslav Shvets
-  - Handler pattern design in project
-  - Hosted an online database for testing
-  - Created dummy database inserts
-  - Worked on creating the controller communication with handlers
-  - Implemented the main loop
-  - Worked on Video Presentation
-- Andrii Tivonenko
-  - Wrote SQL statements
-  - Implemented Handler logic
-  - Created custom, dynamic prepared statements
-  - Manual testing
-  - Worked on Video Presentation
+The project itself consists of a Java Client and a MySQL server. While the server is not shipped with the client itself, any user with technical know-how could set one up. The project provides SQL files for creating the database schema. Additionally, dummy data and suggested user structure is provided in other SQL files.
 
-## Steps for Creating a Database
-1. Set up a MySQL database
-   1. Could be a local install, docker container, or online db
-2. Use the provided creation.sql and insertion.sql scripts to populate the database
+Here is a relational diagram of the database schema:
 
-## Environment
-- Gradle 8.10 (comes with wrapper in the repository)
-- mysql-connector-java 8.0.33
-- Java 21
+![Relational Diagram](markdown_resources/MyProjectRelationalDiagram.png)
 
-To compile and run this application, use `gradle run --console plain`. This will run the app without you having to create a separate jar file. In case you would like to use a jar, then simply use `gradle fatJar` which will create a jar file under `build/libs/DVA-Database.jar`. Then run that jar file from the command line using `java -jar`.
+The project can be found at its [GitHub repository](https://github.com/ViceroyFaust/SDT305-TeamDVA-Project).
 
-To use the wrapper, replace the gradle command with `./gradlew` on Linux. On Windows, simply use the gradlew.bat executable instead.
+---
+## Technologies Used
+- Java 21 JDK
+	-  Used for developing the project. The JRE can be used for running the software
+- MySQL Connector for Java 8.0.33
+	- A Java driver for MySQL
+- Gradle 8.10 and compatible versions
+	- Java Build tool which greatly simplifies project set-up, compilation, and deployment
+- MySQL DB 8+
+	- The database to which the client connects
 
-Once the program is up and running, make sure that you connect properly to it via the link. Enter your username and password correctly.
+---
+## Running the Software
+### The Client
+Download the latest release from the [GitHub repository](https://github.com/ViceroyFaust/SDT305-TeamDVA-Project) . You can use either the compiled binary JAR file or build from source code yourself.
+#### JAR
+Since this is a command-line program, simply run the pre-built jar-file from the terminal emulator provided with your system:
 
-## Video
-[YouTube](https://youtu.be/auiHa7IYftU)
+`$ java -jar DVA-Database-Client.jar `
+
+In case of errors, use the [Building and Running from Source](####Building%20and%20Running%20from%20Source) steps instead. 
+#### Building and Running from Source
+Since the project uses the Gradle build system, compiling and running is trivial. On Unix-based systems, run the provided `gradlew` wrapper. On Windows, use `gradlew.bat`.
+
+`$ ./gradlew run --console plain`
+
+The above command will automatically install all required dependencies to build the project. It will then build the Java files and run the program. It will then use a "plain" console to make it easier to interface with the program.
+
+Alternatively, build and package the application with a JAR file.
+
+`$ ./gradlew fatJar`
+
+This command will create a JAR file that you will be able to run more reliably than letting the build system run the program for you. Once the above command has finished executing, go to the `build/libs` directory, which will contain the jar-file. Simply run it as you would in the [JAR](####JAR) section.
+### The DB Server 
+Explaining how to run the database server is beyond the scope of this documentation. However, this manual will provide general steps and suggestions.
+
+To install and run MySQL please refer to the official [MySQL Website](https://www.mysql.com/) or their official [Docker Repository](https://hub.docker.com/_/mysql/).
+
+Once the server is configured and is up and running, you should execute `CREATE DATABASE <database name>;` and then `USE <database name>;` to create the database that you will use. Then, you can use the SQL files provided in the repository for populating the database:
+- `creation.sql`
+	- Creates the database schema
+- `insertion.sql`
+	- Populates the database schema with dummy data
+- `create_roles.sql`
+	- Creates suggested roles and users with access permissions. Recommended that you change the default passwords and usernames. Also disables remote root login.
+
+---
+## Implemented Security Considerations
+### Input Validation (client side)
+While the initial project had some input validation already, upon review we discovered several instances of poor validation, which allowed for malicious input to the server.
+
+- `HandleDQL.java`
+	- Several query methods accepted a list of comma separated integers without validation: `getEmployees()`, `getEmployeeStations()`, `getInstructorStudents()`, `getManagersStations()`, and `getEmployeeSchedule()`. We fixed this by implementing a `validateCommaSeparatedIntegers(request)` which validates the input using a regex string.
+	- All requests use prepared statements to avoid SQL injection.
+	- Empty input is caught and reported rather than executed.
+- `HandleDML.java`
+	- Due to inexperience, one of our former teammates implemented every method without the use of prepared statements in this class. This opened up our project to SQL injections, in especially sensitive queries that modify data. Prepared statements work by sending the "code" of the query first and the "data" afterwards, thus preventing data-code mixing that allows SQL injections to happen.
+	- Added `validateMap()` method to validate multi-prompt data - it should not be empty.
+	- The three DML methods `addEmployee()`, `addProductionStation`, and `updateManager()` now validate their multi-prompt input with `validateMap()`. Additionally, all of the SQL queries have been rewritten to use prepared statements to prevent injection. 
+
+Following our fixes, the client catches both malicious data input and improper input and notifies the user that such input is disallowed.
+### Authentication and Authorization (server side)
+In the original submission of the project, Team DVA used the 'root' user of the SQL server. However, that unnecessarily exposes the inner workings of the server to the client and the outside web.
+
+After reviewing the server configuration, our team settled on the following:
+- Remove the ability to connect to root from outside of localhost, thus preventing outside actors from gaining access to it.
+- Create distinct roles with specific permissions:
+	- employee
+		- Only has read access to the database.
+	- trainer
+		- Has read access to the database.
+		- Can modify the 'Train' relation, as they are responsible for training.
+	- manager
+		- Has read access to the database
+		- Has read-write access to 'Schedule', 'Manages', and 'TrainedIn', as those relations fall within their area of responsibility.
+	- director
+		- Has read access to the database
+		- Has read-write access to 'Schedule', 'Train', 'ProductionStation', 'Employee', 'Manages', and 'TrainedIn', as those relations fall within their area of responsibility.
+None of the new roles allow the users to access anything outside of the 'restaurant' database, thus preventing security leaks. Additionally, while director has a broad set of permissions, they are not allowed to modify 'Restaurant', as that can only be modified by the developers - the root user.
+
+---
+Document Version: 2025-05-06
+Copyright: Danylo Rybchynskyi & Vladyslav Shvets
