@@ -52,11 +52,11 @@ public class Main {
       switch (userChoice) {
         case "1":
           logger.info("Using DQL Handler.");
-          passToHandler(dqlHandler, view::printQueryMenu, view, db);
+          passToHandler(dqlHandler, view::printQueryMenu, view);
           break;
         case "2":
           logger.info("Using DML Handler.");
-          passToHandler(dmlHandler, view::printModifyMenu, view, db);
+          passToHandler(dmlHandler, view::printModifyMenu, view);
           break;
         case "3":
           logger.info("Exiting the application.");
@@ -69,8 +69,7 @@ public class Main {
     }
   }
 
-  private static void passToHandler(RequestHandler handler, Runnable printSubMenu, View view,
-      Database db) {
+  private static void passToHandler(RequestHandler handler, Runnable printSubMenu, View view) {
     while (true) {
       try {
         printSubMenu.run();
