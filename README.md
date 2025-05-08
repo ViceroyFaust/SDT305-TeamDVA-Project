@@ -21,8 +21,9 @@ The project can be found at its [GitHub repository](https://github.com/ViceroyFa
 	- A Java driver for MySQL
 - Gradle 8.10 and compatible versions
 	- Java Build tool which greatly simplifies project set-up, compilation, and deployment
-- MySQL DB 8+
+- MariaDB 10.11.11
 	- The database to which the client connects
+	- MariaDB supports our self-signed certificates for secure communication
 
 ---
 ## Running the Software
@@ -98,6 +99,33 @@ Initially, this project did not use any kind of logging, besides the info dumped
 Following our review, our team added Log4J2 logging features to our application. Since the client itself is console-based, the logging is done to a separate file under the `logs/` directory. The logger logs important actions within the business logic of the program, such as connecting to or disconnecting from the database, and logs errors such as invalid input.
 
 This logging enabled the developers to quickly identify where an error might have occurred in the code. Furthermore, it allows the user to see detailed information on why the application might have failed to connect to a server. Or, a company could be able to see if any of their users tried to escalate privilege from an unprivileged company computer.
+### Communication Security (server side)
+TeamDVA implemented secure communication between the client and the server via SSL. For this, the team configured a MariaDB server (which is largely compatible with MySQL) to use self-signed certificates which ensure encrypted communication.
+
+Let's take a look at the result:
+![Example screenshot](markdown_resources/exampleScreenshot.jpg)
+
+Using `--ssl` and  `--ssl-verify-server-cert` flags tells MariaDB to use SSL for secure communication and forces it to verify server certificates. When the user logs in, they will do so over a secure SSL connection.
+#### Steps to setup SSL on MariaDB
+- First, generate a SSL certificate. Administrators can use a public certificate issuer.
+	1. Generate certificates: `certbot certonly --standalone -d {domain_name} 
+	2. Locate certificates in `etc/letsencrypt/live/{domain_name}/
+	3. Files required for this configuration:
+		- `fullchain.pem`
+		- `privkeyt.pem`
+- Second, install MariaDB 
+	- Setup MariaDB using normal installation or by using Docker
+		- https://mariadb.com/kb/en/installing-mariadb-deb-files/
+- Third, connect certificates to MariaDB
+	- Open the MariaDB configuration file `vim /etc/mysql/my.cnf`
+	- Paste the following: 
+```
+[mariadb]  
+ssl_cert=/etc/letsencrypt/live/{domain_name}/fullchain.pem  
+ssl_key=/etc/letsencrypt/live/{domain_name}/privkey.pem  
+ssl_ca=/etc/letsencrypt/live/{domain_name}/fullchain.pem
+```
+- Restart the database instance and verify that the configuration is working
 
 ---
 Document Version: 2025-05-06
