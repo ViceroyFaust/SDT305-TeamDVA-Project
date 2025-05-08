@@ -9,11 +9,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ua.edu.auk.dva.Database;
 import ua.edu.auk.dva.Table;
 import ua.edu.auk.dva.View;
 
 public class HandleDQL implements RequestHandler {
+
+  private static final Logger logger = LogManager.getLogger(HandleDQL.class);
 
   private final Database database;
   private final View view;
@@ -85,6 +89,7 @@ public class HandleDQL implements RequestHandler {
    */
   private void validateCommaSeparatedIntegers(String input) {
     if (!Pattern.matches("^[0-9]+(,[0-9]+)*$", input)) {
+      logger.warn("Invalid comma separated integer input detected: {}", input);
       throw new IllegalArgumentException(
           "Input must be numbers separated by commas (ex. 1,2,3...)");
     }
@@ -109,6 +114,7 @@ public class HandleDQL implements RequestHandler {
 
   @Override
   public HandlerReturnModel handleRequest(String request) throws SQLException {
+    logger.info("Handling DQL request: {}", request);
     System.out.println("Handling DQL request: " + request);
     return functionMap.get(request).get();
   }
@@ -117,6 +123,7 @@ public class HandleDQL implements RequestHandler {
    * Fetch all employees from the database and return as a Table object.
    */
   public HandlerReturnModel getEmployeesNoArgs() throws SQLException {
+    logger.info("Requesting for all employees.");
     Connection conn = this.database.getDatabase();
     String sql = "SELECT * FROM Employee";
 
@@ -153,6 +160,7 @@ public class HandleDQL implements RequestHandler {
             WHERE EmployeeId IN (%s)
         """.formatted(placeholders);
 
+    logger.info("Selecting employees with id: {}", request);
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       // Set values for the placeholders
       for (int i = 0; i < employeeIds.length; i++) {
@@ -177,6 +185,7 @@ public class HandleDQL implements RequestHandler {
 
     // No need to check for bad input because we aren't directly inserting data
 
+    logger.info("Querying employees by position: {}", request);
     try (PreparedStatement statement = database.getDatabase().prepareStatement(sql)) {
       statement.setString(1, request);
       try (ResultSet results = statement.executeQuery()) {
@@ -218,6 +227,7 @@ public class HandleDQL implements RequestHandler {
             WHERE E.EmployeeId IN (%s)
         """.formatted(placeholders, placeholders);
 
+    logger.info("Requesting employee station by id: {}", input);
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       for (int i = 0; i < employeeIds.length; i++) {
         stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
@@ -257,7 +267,7 @@ public class HandleDQL implements RequestHandler {
             JOIN Employee E ON T.EmployeeId = E.EmployeeId
             WHERE T.TrainerId IN (%s)
         """.formatted(placeholders);
-
+  logger.info("Requesting intructors' students by id: {}", input);
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       for (int i = 0; i < instructorIds.length; i++) {
         stmt.setInt(i + 1, Integer.parseInt(instructorIds[i]));
@@ -296,6 +306,7 @@ public class HandleDQL implements RequestHandler {
             WHERE M.ManagerId IN (%s)
         """.formatted(placeholders);
 
+    logger.info("Requesting managers' stations by id: {}", input);
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       for (int i = 0; i < managerIds.length; i++) {
         stmt.setInt(i + 1, Integer.parseInt(managerIds[i]));
@@ -331,6 +342,7 @@ public class HandleDQL implements RequestHandler {
             WHERE S.EmployeeId IN (%s)
         """.formatted(placeholders);
 
+    logger.info("Requesting employees' stations by id: {}", input);
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       for (int i = 0; i < employeeIds.length; i++) {
         stmt.setInt(i + 1, Integer.parseInt(employeeIds[i]));
@@ -351,6 +363,7 @@ public class HandleDQL implements RequestHandler {
     Connection conn = this.database.getDatabase();
     String sql = "SELECT Name, Category FROM ProductionStation";
 
+    logger.info("Requesting production stations.");
     try (PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery()) {
       return resultsToModel(rs, "Production Stations");
@@ -366,6 +379,7 @@ public class HandleDQL implements RequestHandler {
     Connection conn = this.database.getDatabase();
     String sql = "SELECT RestaurantId, OpeningTime, ClosingTime, DateOpened FROM Restaurant";
 
+    logger.info("Requesting restaurants.");
     try (PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery()) {
       return resultsToModel(rs, "Restaurants");
