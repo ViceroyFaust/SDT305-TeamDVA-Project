@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'ua.edu.auk.dva'
-version = '2.0'
+version = '2.1'
 
 repositories {
     mavenCentral()
